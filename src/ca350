@@ -101,7 +101,7 @@ def on_message(client, userdata, message):
             fan_level=4
     elif message.topic == "comfoair/on/set":
         selector = msg_data
-        if selector == "00":
+        if selector == "10":
             fan_level=1
         elif selector == "20":
             fan_level=2
@@ -189,13 +189,13 @@ def get_ventilation_status():
         publish_message(msg='{ "idx" : ' +str(IDXFanLevel) +str(', "nvalue" : 0, "svalue" :"') +str(FanLevel) +str('"}'), mqtt_path='domoticz/in/fanlevel')
         publish_message(msg='{ "idx" : ' +str(IDXIntakeFanActive) +str(', "nvalue" : 0, "svalue" :"') +str(StrIntakeFanActive) +str('"}'), mqtt_path='domoticz/in/intakefanactive')
         if FanLevel == 1:
-            publish_message(msg='00', mqtt_path='comfoair/on/state')
+            publish_message(msg='10', mqtt_path='comfoair/on/state')
             publish_message(msg='20', mqtt_path='comfoair/speed/state')
         elif FanLevel == 2 or FanLevel == 3 or FanLevel == 4:
             publish_message(msg=str(FanLevel*10), mqtt_path='comfoair/speed/state')
-            publish_message(msg='10', mqtt_path='comfoair/on/state')
+            publish_message(msg='20', mqtt_path='comfoair/on/state')
         else:
-            publish_message(msg='00', mqtt_path='comfoair/on/state')
+            publish_message(msg='10', mqtt_path='comfoair/on/state')
             
         info_msg('ReturnAirLevel: {}, SupplyAirLevel: {}, FanLevel: {}, IntakeFanActive: {}'.format(ReturnAirLevel, SupplyAirLevel, FanLevel, StrIntakeFanActive))
 
