@@ -2,28 +2,31 @@
 # -*- coding: utf-8 -*-
 
 """
-Interface with a StorkAir WHR930 on Domoticz
-Version 0.8 by albert[@]hakvoort[.]co
+Interface with a StorkAir CA350 on Home Assistant
+Version 0.1 by adorobis[@]gmail[.]com
 
-based on code from Mosibi
+based on code from https://github.com/AlbertHakvoort/StorkAir-Zehnder-WHR-930-Domoticz-MQTT
 
-Publish every 10 seconds the status on a MQTT Domoticz/in topic
+Publish every 15 seconds the status on a MQTT comfoair/speed and comfoair/on topics
+This is to integrate with FAN device type in Home Assistant deployed on FreeNAS jail
 Listen on MQTT topic for commands to set the ventilation level
 
 todo :
-
+- clean up the domoticz legacy and adjust to Home Assistant MQTT integration model for more parameters
 - set bypass temperature
+- turn on/off intake and exhaust ventilators
 - check on faulty messages
 - serial check
 
 The following packages are needed:
 
-sudo apt-get install python3-serial python3-pip python3-yaml
+sudo pkg install py37-serial python3-pip python3-yaml
 sudo pip3 install paho-mqtt
 
-start script with python3 whr930.py
+start script with python3.7 ca350
 """
 
+#to be cleaned up as different approach on Home Assistant MQTT integration
 IDXOutsideAirTemp=329           # temperature
 IDXSupplyAirTemp=330            # temperature
 IDXReturnAirTemp=331            # temperature
@@ -36,10 +39,8 @@ IDXIntakeFanActive=337          # text
 IDXFanLevel=338                 # text
 IDXFilter=339                   # text
 IDXSelector=340                 # selector 0=auto 10=away 20=low 30=middle 40=high !! Depends on model/CO2 sensor etc !!
-#SerialPort='/dev/cuaU1'         # Serial port WHR930
-SerialPort='/dev/cuau3'         # Serial port CA350 RS232
-#SerialPort='/dev/cuaU1'         # Serial port CA350 usb->ttl rs232 cable
 
+SerialPort='/dev/cuau3'         # Serial port CA350 RS232
 MQTTServer='10.144.1.103'          # IP MQTT broker
 
 import paho.mqtt.client as mqtt
@@ -47,9 +48,9 @@ import time
 import serial
 import json
 
-print("************************")
-print("* WHR930 MQTT Domoticz *")
-print("************************")
+print("*****************************")
+print("* CA350 MQTT Home Assistant *")
+print("*****************************")
 print("")
 
 def debug_msg(message):
@@ -108,30 +109,6 @@ def on_message(client, userdata, message):
     if fan_level >= 0 and fan_level <= 4:
         set_ventilation_level(fan_level)
         get_ventilation_status()
-"""
-    status = json_data['idx']
-    if status == IDXSelector:
-        print ("IDX Selector found on MQTT broker Domoticz")
-        fan_level=99
-        selector = int(json_data['svalue1'])
-        if 0 == selector: 
-            print("s1 is 0")
-            fan_level=0
-        elif 10 == selector: 
-            print("s1 is 10")
-            fan_level=1
-        elif 20 == selector:
-            print("s1 is 20")
-            fan_level=2
-        elif 30 == selector:
-            print("s1 is 30")
-            fan_level=3
-        elif 40 == selector:
-            print("s1 is 40")
-            fan_level=4
-        if fan_level >= 0 and fan_level <= 4:
-                    set_ventilation_level(fan_level)
-"""
 
 def publish_message(msg, mqtt_path):                                                                      
     mqttc.publish(mqtt_path, payload=msg, qos=0, retain=True)
@@ -199,7 +176,6 @@ def get_ventilation_status():
     else:
         ReturnAirLevel = int(data[13], 16)
         SupplyAirLevel = int(data[14], 16)
-#        FanLevel = int(data[15], 16) - 1
         FanLevel = int(data[15], 16)
         IntakeFanActive = int(data[16], 16)
 
@@ -289,8 +265,8 @@ def topic_subscribe():
     try:
 #        mqttc.subscribe("domoticz/out", 0)
 #        info_msg('Successfull subscribed to the domoticz/out topics')
-#        mqttc.subscribe("comfoair/on/set", 0)
-#        info_msg('Successfull subscribed to the comfoair/on/set topics')
+        mqttc.subscribe("comfoair/on/set", 0)
+        info_msg('Successfull subscribed to the comfoair/on/set topics')
         mqttc.subscribe("comfoair/speed/set", 0)
         info_msg('Successfull subscribed to the comfoair/speed/set topics')
     except:
