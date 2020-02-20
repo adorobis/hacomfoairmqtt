@@ -12,7 +12,6 @@ This is to integrate with FAN device type in Home Assistant deployed on FreeNAS 
 Listen on MQTT topic for commands to set the ventilation level
 
 todo :
-- clean up the domoticz legacy and adjust to Home Assistant MQTT integration model for more parameters
 - set bypass temperature
 - turn on/off intake and exhaust ventilators
 - check on faulty messages
@@ -26,21 +25,7 @@ sudo pip3 install paho-mqtt
 start script with python3.7 ca350
 """
 
-#to be cleaned up as different approach on Home Assistant MQTT integration
-IDXOutsideAirTemp=329           # temperature
-IDXSupplyAirTemp=330            # temperature
-IDXReturnAirTemp=331            # temperature
-IDXExhaustAirTemp=332           # temperature
-IDXIntakeFanSpeed=333           # text
-IDXExhaustFanSpeed=334          # text
-IDXIntakeFanRPM=335             # text
-IDXExhaustFanRPM=336            # text
-IDXIntakeFanActive=337          # text
-IDXFanLevel=338                 # text
-IDXFilter=339                   # text
-IDXSelector=340                 # selector 0=auto 10=away 20=low 30=middle 40=high !! Depends on model/CO2 sensor etc !!
-
-SerialPort='/dev/cuau3'         # Serial port CA350 RS232
+SerialPort='/dev/cuau3'            # Serial port CA350 RS232 direct or via USB TTL adapter
 MQTTServer='10.144.1.103'          # IP MQTT broker
 
 import paho.mqtt.client as mqtt
@@ -146,9 +131,13 @@ def set_ventilation_level(nr):
             info_msg('Changed the ventilation to {0}'.format(nr))
         else:
             warning_msg('Changing the ventilation to {0} went wrong, did not receive an ACK after the set command'.format(nr))
+            time.sleep(2)
+            set_ventilation_level(nr)
     else:
         warning_msg('Changing the ventilation to {0} went wrong, did not receive an ACK after the set command'.format(nr))
-
+        time.sleep(2)
+        set_ventilation_level(nr)
+        
 def get_temp():
     data = serial_command(b'\x07\xF0\x00\x0F\x00\xBC\x07\x0F')
 
@@ -160,12 +149,12 @@ def get_temp():
         SupplyAirTemp = int(data[8], 16) / 2.0 - 20
         ReturnAirTemp = int(data[9], 16) / 2.0 - 20
         ExhaustAirTemp = int(data[10], 16) / 2.0 - 20
+        
+        publish_message(msg='str(OutsideAirTemp)'), mqtt_path='comfoair/outsidetemp')
+        publish_message(msg='str(SupplyAirTemp)'), mqtt_path='comfoair/supplytemp')
+        publish_message(msg='str(ExhaustAirTemp)'), mqtt_path='comfoair/exhausttemp')    
+        publish_message(msg='str(ReturnAirTemp)'), mqtt_path='comfoair/returntemp')
 
-        publish_message(msg='{ "idx" : ' +str(IDXOutsideAirTemp) +str(', "nvalue" : 0, "svalue" :"') +str(OutsideAirTemp) +str('"}'), mqtt_path='domoticz/in/outsidetemp')
-        publish_message(msg='{ "idx" : ' +str(IDXSupplyAirTemp) +str(', "nvalue" : 0, "svalue" :"') +str(SupplyAirTemp) +str('"}'), mqtt_path='domoticz/in/supplytemp')
-        publish_message(msg='{ "idx" : ' +str(IDXReturnAirTemp) +str(', "nvalue" : 0, "svalue" :"') +str(ExhaustAirTemp) +str('"}'), mqtt_path='domoticz/in/returntemp')    
-        publish_message(msg='{ "idx" : ' +str(IDXExhaustAirTemp) +str(', "nvalue" : 0, "svalue" :"') +str(ReturnAirTemp) +str('"}'), mqtt_path='domoticz/in/exhausttemp')
-     
         debug_msg('OutsideAirTemp: {0}, SupplyAirTemp: {1}, ReturnAirTemp: {2}, ExhaustAirTemp: {3}'.format(OutsideAirTemp, SupplyAirTemp, ReturnAirTemp, ExhaustAirTemp))
 
 def get_ventilation_status():
@@ -185,9 +174,7 @@ def get_ventilation_status():
             StrIntakeFanActive = 'No'
         else:
             StrIntakeFanActive = 'Unknown'
-            
-        publish_message(msg='{ "idx" : ' +str(IDXFanLevel) +str(', "nvalue" : 0, "svalue" :"') +str(FanLevel) +str('"}'), mqtt_path='domoticz/in/fanlevel')
-        publish_message(msg='{ "idx" : ' +str(IDXIntakeFanActive) +str(', "nvalue" : 0, "svalue" :"') +str(StrIntakeFanActive) +str('"}'), mqtt_path='domoticz/in/intakefanactive')
+
         if FanLevel == 1:
             publish_message(msg='10', mqtt_path='comfoair/on/state')
             publish_message(msg='20', mqtt_path='comfoair/speed/state')
@@ -220,10 +207,8 @@ def get_fan_status():
         else:
             ExhaustFanRPM = int(1875000 / int(''.join([str(int(data[11], 16)), str(int(data[12], 16))])))
 
-        publish_message(msg='{ "idx" : ' +str(IDXIntakeFanSpeed) +str(', "nvalue" : 0, "svalue" :"') +str(IntakeFanSpeed) +str('"}'), mqtt_path='domoticz/in/intakefanspeed')
-        publish_message(msg='{ "idx" : ' +str(IDXExhaustFanSpeed) +str(', "nvalue" : 0, "svalue" :"') +str(ExhaustFanSpeed) +str('"}'), mqtt_path='domoticz/in/exhaustfanspeed')
-        publish_message(msg='{ "idx" : ' +str(IDXIntakeFanRPM) +str(', "nvalue" : 0, "svalue" :"') +str(IntakeFanRPM) +str('"}'), mqtt_path='domoticz/in/intakefanrpm')
-        publish_message(msg='{ "idx" : ' +str(IDXExhaustFanRPM) +str(', "nvalue" : 0, "svalue" :"') +str(ExhaustFanRPM) +str('"}'), mqtt_path='domoticz/in/exhaustfanrpm')
+        publish_message(msg='str(IntakeFanSpeed)'), mqtt_path='comfoair/intakefanspeed')
+        publish_message(msg='str(ExhaustFanSpeed)'), mqtt_path='comfoair/exhaustfanspeed')
 
         debug_msg('IntakeFanSpeed {0}%, ExhaustFanSpeed {1}%, IntakeAirRPM {2}, ExhaustAirRPM {3}'.format(IntakeFanSpeed,ExhaustFanSpeed,IntakeFanRPM,ExhaustFanRPM))
     
@@ -239,6 +224,8 @@ def get_filter_status():
 
     if data == None:
         warning_msg('get_filter_status function could not get serial data')
+        time.sleep(2)
+#        get_filter_status()
     else:
         #print(data)
         if int(data[18], 16) == 0:
@@ -248,7 +235,7 @@ def get_filter_status():
         else:
             FilterStatus = 'Unknown'
         
-        publish_message(msg='{ "idx" : ' +str(IDXFilter) +str(', "nvalue" : 0, "svalue" :"') +str(FilterStatus) +str('"}'), mqtt_path='domoticz/in/filter')
+        publish_message(msg='str(FilterStatus)'), mqtt_path='comfoair/filterstatus')
         debug_msg('FilterStatus: {0}'.format(FilterStatus))
     
 def recon():
@@ -263,8 +250,6 @@ def recon():
         
 def topic_subscribe():
     try:
-#        mqttc.subscribe("domoticz/out", 0)
-#        info_msg('Successfull subscribed to the domoticz/out topics')
         mqttc.subscribe("comfoair/on/set", 0)
         info_msg('Successfull subscribed to the comfoair/on/set topics')
         mqttc.subscribe("comfoair/speed/set", 0)
@@ -309,8 +294,7 @@ while True:
         get_ventilation_status()
         get_filter_status()
         get_fan_status()
-
-        time.sleep(15)
+        time.sleep(10)
         pass
     except KeyboardInterrupt:
         mqttc.loop_stop()
