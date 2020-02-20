@@ -207,8 +207,8 @@ def get_fan_status():
         else:
             ExhaustFanRPM = int(1875000 / int(''.join([str(int(data[11], 16)), str(int(data[12], 16))])))
 
-        publish_message(msg='str(IntakeFanSpeed)'), mqtt_path='comfoair/intakefanspeed')
-        publish_message(msg='str(ExhaustFanSpeed)'), mqtt_path='comfoair/exhaustfanspeed')
+        publish_message(msg='str(IntakeFanSpeed)', mqtt_path='comfoair/intakefanspeed')
+        publish_message(msg='str(ExhaustFanSpeed)', mqtt_path='comfoair/exhaustfanspeed')
 
         debug_msg('IntakeFanSpeed {0}%, ExhaustFanSpeed {1}%, IntakeAirRPM {2}, ExhaustAirRPM {3}'.format(IntakeFanSpeed,ExhaustFanSpeed,IntakeFanRPM,ExhaustFanRPM))
     
@@ -235,7 +235,7 @@ def get_filter_status():
         else:
             FilterStatus = 'Unknown'
         
-        publish_message(msg='str(FilterStatus)'), mqtt_path='comfoair/filterstatus')
+        publish_message(msg='str(FilterStatus)', mqtt_path='comfoair/filterstatus')
         debug_msg('FilterStatus: {0}'.format(FilterStatus))
     
 def recon():
