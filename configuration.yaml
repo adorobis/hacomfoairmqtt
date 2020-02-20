@@ -1,0 +1,20 @@
+#Zehnder ComfoAir CA350
+#Example configuratio.yaml entries that create fan device type and integrate well with controlling ventilation levels of the CA350 unit
+fan:
+  - platform: mqtt
+    name: "ComfoAir"
+    state_topic: "comfoair/on/state"
+    command_topic: "comfoair/on/set"
+    speed_state_topic: "comfoair/speed/state"
+    speed_command_topic: "comfoair/speed/set"
+    qos: 0
+    payload_on: "20"
+    payload_off: "10"
+    payload_low_speed: "20"
+    payload_medium_speed: "30"
+    payload_high_speed: "40"
+    speeds:
+      - "off"
+      - low
+      - medium
+      - high
