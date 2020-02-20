@@ -150,10 +150,10 @@ def get_temp():
         ReturnAirTemp = int(data[9], 16) / 2.0 - 20
         ExhaustAirTemp = int(data[10], 16) / 2.0 - 20
         
-        publish_message(msg='str(OutsideAirTemp)'), mqtt_path='comfoair/outsidetemp')
-        publish_message(msg='str(SupplyAirTemp)'), mqtt_path='comfoair/supplytemp')
-        publish_message(msg='str(ExhaustAirTemp)'), mqtt_path='comfoair/exhausttemp')    
-        publish_message(msg='str(ReturnAirTemp)'), mqtt_path='comfoair/returntemp')
+        publish_message(msg='str(OutsideAirTemp)', mqtt_path='comfoair/outsidetemp')
+        publish_message(msg='str(SupplyAirTemp)', mqtt_path='comfoair/supplytemp')
+        publish_message(msg='str(ExhaustAirTemp)', mqtt_path='comfoair/exhausttemp')    
+        publish_message(msg='str(ReturnAirTemp)', mqtt_path='comfoair/returntemp')
 
         debug_msg('OutsideAirTemp: {0}, SupplyAirTemp: {1}, ReturnAirTemp: {2}, ExhaustAirTemp: {3}'.format(OutsideAirTemp, SupplyAirTemp, ReturnAirTemp, ExhaustAirTemp))
 
