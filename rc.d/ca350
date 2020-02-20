@@ -1,0 +1,90 @@
+#!/bin/sh
+#
+# PROVIDE: appdaemon
+# REQUIRE: LOGIN
+# KEYWORD: shutdown
+#
+# appdaemon_enable: Set to YES to enable the appdaemon service.
+#		Default: NO
+# appdaemon_user: The user account used to run the appdaemon daemon.
+#		This is optional, however do not specifically set this to an
+#		empty string as this will cause the daemon to run as root.
+#		Default: hass
+# appdaemon_group: The group account used to run the appdaemon daemon.
+#		This is optional, however do not specifically set this to an
+#		empty string as this will cause the daemon to run with group wheel.
+#		Default: hass
+# appdaemon_config_dir: Directory where appdaemon config is located.
+#		Default: "/home/hass/appdaemon/conf"
+# appdaemon_venv: Directory where appdaemon virtualenv is located.
+#		Default: "/usr/local/share/appdaemon"
+#
+# -------------------------------------------------------
+# Copy this file to '/usr/local/etc/rc.d/appdaemon' 
+# `chmod +x /usr/local/etc/rc.d/appdaemon`
+# `sysrc appdaemon_enable=yes`
+# `service appdaemon start`
+# -------------------------------------------------------
+
+. /etc/rc.subr
+name=ca350
+rcvar=${name}_enable
+
+pidfile_child="/var/run/${name}.pid"
+pidfile="/var/run/${name}_daemon.pid"
+logfile="/var/log/${name}_daemon.log"
+
+: ${appdaemon_enable:="NO"}
+: ${appdaemon_user:="hass"}
+: ${appdaemon_group:="hass"}
+: ${appdaemon_config_dir:="/home/hass/appdaemon/conf"}
+: ${appdaemon_venv:="/srv/ca350"}
+
+command="/usr/sbin/daemon"
+extra_commands="restart test"
+
+start_precmd=${name}_precmd
+ca350_precmd() {
+    rc_flags="-f -o ${logfile} -P ${pidfile} -p ${pidfile_child} ${appdaemon_venv}/bin/ca350 ${rc_flags}"
+    [ ! -e "${pidfile_child}" ] && install -g ${appdaemon_group} -o ${appdaemon_user} -- /dev/null "${pidfile_child}"
+    [ ! -e "${pidfile}" ] && install -g ${appdaemon_group} -o ${appdaemon_user} -- /dev/null "${pidfile}"
+    [ ! -e "${logfile}" ] && rm -f -- "${logfile}"
+    install -g ${appdaemon_group} -o ${appdaemon_user} -- /dev/null "${logfile}"
+#    if [ ! -d "${appdaemon_config_dir}" ]; then
+#      install -d -g ${appdaemon_group} -o ${appdaemon_user} -- "${appdaemon_config_dir}"
+#    fi
+}
+
+stop_postcmd=${name}_postcmd
+ca350_postcmd() {
+    rm -f -- "${pidfile}"
+    rm -f -- "${pidfile_child}"
+}
+
+restart_cmd="${name}_restart"
+ca350_restart() {
+    service ${name} stop
+    sleep 1
+    service ${name} start
+}
+
+
+test_cmd="${name}_test"
+ca350_test() {
+    echo -e "\nTesting virtualenv...\n"
+    [ ! -d "${appdaemon_venv}" ] && echo -e " NO DIRECTORY: ${appdaemon_venv}\n" && exit
+    [ ! -f "${appdaemon_venv}/bin/activate" ] && echo -e " NO FILE: ${appdaemon_venv}/bin/activate\n" && exit
+
+    ## Switch users / activate virtualenv / run a command
+    su "${appdaemon_user}" -c '
+      source ${@}/bin/activate || exit 2
+      echo " $(python --version)" || exit 3
+      echo " ca350 $(pip3 show ca350 | grep Version | cut -d" " -f2)" || exit 4
+      deactivate
+    ' _ ${appdaemon_venv}
+
+    [ $? != 0 ] && echo "exit $?"
+}
+
+load_rc_config ${name}
+run_rc_command "$1"
