@@ -142,7 +142,8 @@ def get_temp():
         SupplyAirTemp = int(data[8], 16) / 2.0 - 20
         ReturnAirTemp = int(data[9], 16) / 2.0 - 20
         ExhaustAirTemp = int(data[10], 16) / 2.0 - 20
-        
+        print('Temperature')
+        print(str(data))
         publish_message(msg=str(OutsideAirTemp), mqtt_path='comfoair/outsidetemp')
         publish_message(msg=str(SupplyAirTemp), mqtt_path='comfoair/supplytemp')
         publish_message(msg=str(ExhaustAirTemp), mqtt_path='comfoair/exhausttemp')    
@@ -224,7 +225,7 @@ def get_comfort_temp():
     if data == None:
         warning_msg('function get_comfort_temp could not get serial data')
     else:
-        ComfortTemp = int(data[7], 16)
+        ComfortTemp = int(data[7], 16) / 2 - 20
         print(str(data))
         print('Comfort temp: ' + str(ComfortTemp))
         publish_message(msg=str(ComfortTemp), mqtt_path='comfoair/comforttemp')
