@@ -4,24 +4,18 @@
 """
 Interface with a StorkAir CA350 on Home Assistant
 Version 0.1 by adorobis[@]gmail[.]com
-
 based on code from https://github.com/AlbertHakvoort/StorkAir-Zehnder-WHR-930-Domoticz-MQTT
-
 Publish every 15 seconds the status on a MQTT comfoair/speed and comfoair/on topics
 This is to integrate with FAN device type in Home Assistant deployed on FreeNAS jail
 Listen on MQTT topic for commands to set the ventilation level
-
 todo :
 - set bypass temperature
 - turn on/off intake and exhaust ventilators
 - check on faulty messages
 - serial check
-
 The following packages are needed:
-
 sudo pkg install py37-serial python3-pip python3-yaml
 sudo pip3 install paho-mqtt
-
 start script with python3.7 ca350
 """
 
@@ -220,6 +214,22 @@ def get_bypass_status():
         else:
             publish_message(msg='Summer', mqtt_path='comfoair/bypassmode')
 
+def get_comfort_temp():
+    # 0x07 0xF0 0x00 0xD1 0x00 0x7E 0x07 0x0F 
+    # Checksum: 0x7E(0x00 0xD1) = 0 + 209 + 0 + 173 = 382
+    # End: 0x07 0x0F
+
+    data = serial_command(b'\x07\xF0\x00\xD1\x00\x7E\x07\x0F')
+
+    if data == None:
+        warning_msg('function get_comfort_temp could not get serial data')
+    else:
+        ComfortTemp = int(data[7], 16)
+        print(str(data))
+        print('Comfort temp: ' + str(ComfortTemp))
+        publish_message(msg=str(ComfortTemp), mqtt_path='comfoair/comforttemp')
+
+
 def get_filter_status():
     # 0x07 0xF0 0x00 0xD9 0x00 0x86 0x07 0x0F 
     # Start: 0x07 0xF0
@@ -298,6 +308,7 @@ ser = serial.Serial(port = SerialPort, baudrate = 9600, bytesize = serial.EIGHTB
 mqttc.loop_start()
 while True:
     try:
+        get_comfort_temp()
         get_bypass_status()
         get_temp()
         get_ventilation_status()
@@ -309,5 +320,6 @@ while True:
         mqttc.loop_stop()
         ser.close()
         break
+
     
 # End of program
