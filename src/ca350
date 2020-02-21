@@ -132,24 +132,28 @@ def set_ventilation_level(nr):
         set_ventilation_level(nr)
         
 def get_temp():
-    data = serial_command(b'\x07\xF0\x00\x0F\x00\xBC\x07\x0F')
+    # 0x07 0xF0 0x00 0xD1 0x00 0x7E 0x07 0x0F 
+    # Checksum: 0x7E(0x00 0xD1) = 0 + 209 + 0 + 173 = 382
+    # End: 0x07 0x0F
 
+    data = serial_command(b'\x07\xF0\x00\xD1\x00\x7E\x07\x0F')
+    
     if data == None:
         warning_msg('get_temp function could not get serial data')
     else:
+        ComfortTemp = int(data[7], 16) / 2 - 20
+        OutsideAirTemp = int(data[8], 16) / 2.0 - 20
+        SupplyAirTemp = int(data[9], 16) / 2.0 - 20
+        ReturnAirTemp = int(data[10], 16) / 2.0 - 20
+        ExhaustAirTemp = int(data[11], 16) / 2.0 - 20
 
-        OutsideAirTemp = int(data[7], 16) / 2.0 - 20
-        SupplyAirTemp = int(data[8], 16) / 2.0 - 20
-        ReturnAirTemp = int(data[9], 16) / 2.0 - 20
-        ExhaustAirTemp = int(data[10], 16) / 2.0 - 20
-        print('Temperature')
-        print(str(data))
+        publish_message(msg=str(ComfortTemp), mqtt_path='comfoair/comforttemp')
         publish_message(msg=str(OutsideAirTemp), mqtt_path='comfoair/outsidetemp')
         publish_message(msg=str(SupplyAirTemp), mqtt_path='comfoair/supplytemp')
         publish_message(msg=str(ExhaustAirTemp), mqtt_path='comfoair/exhausttemp')    
         publish_message(msg=str(ReturnAirTemp), mqtt_path='comfoair/returntemp')
 
-        debug_msg('OutsideAirTemp: {0}, SupplyAirTemp: {1}, ReturnAirTemp: {2}, ExhaustAirTemp: {3}'.format(OutsideAirTemp, SupplyAirTemp, ReturnAirTemp, ExhaustAirTemp))
+        debug_msg('OutsideAirTemp: {0}, SupplyAirTemp: {1}, ReturnAirTemp: {2}, ExhaustAirTemp: {3}, ComfortTemp: {4}'.format(OutsideAirTemp, SupplyAirTemp, ReturnAirTemp, ExhaustAirTemp, ComfortTemp))
 
 def get_ventilation_status():
     data = serial_command(b'\x07\xF0\x00\xCD\x00\x7A\x07\x0F')
@@ -214,21 +218,6 @@ def get_bypass_status():
             publish_message(msg='Winter', mqtt_path='comfoair/bypassmode')
         else:
             publish_message(msg='Summer', mqtt_path='comfoair/bypassmode')
-
-def get_comfort_temp():
-    # 0x07 0xF0 0x00 0xD1 0x00 0x7E 0x07 0x0F 
-    # Checksum: 0x7E(0x00 0xD1) = 0 + 209 + 0 + 173 = 382
-    # End: 0x07 0x0F
-
-    data = serial_command(b'\x07\xF0\x00\xD1\x00\x7E\x07\x0F')
-
-    if data == None:
-        warning_msg('function get_comfort_temp could not get serial data')
-    else:
-        ComfortTemp = int(data[7], 16) / 2 - 20
-        print(str(data))
-        print('Comfort temp: ' + str(ComfortTemp))
-        publish_message(msg=str(ComfortTemp), mqtt_path='comfoair/comforttemp')
 
 
 def get_filter_status():
@@ -309,12 +298,11 @@ ser = serial.Serial(port = SerialPort, baudrate = 9600, bytesize = serial.EIGHTB
 mqttc.loop_start()
 while True:
     try:
-        get_comfort_temp()
-        get_bypass_status()
         get_temp()
         get_ventilation_status()
         get_filter_status()
         get_fan_status()
+        get_bypass_status()
         time.sleep(10)
         pass
     except KeyboardInterrupt:
