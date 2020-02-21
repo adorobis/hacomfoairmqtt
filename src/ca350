@@ -183,7 +183,7 @@ def get_ventilation_status():
         else:
             publish_message(msg='10', mqtt_path='comfoair/on/state')
             
-        info_msg('ReturnAirLevel: {}, SupplyAirLevel: {}, FanLevel: {}, IntakeFanActive: {}'.format(ReturnAirLevel, SupplyAirLevel, FanLevel, StrIntakeFanActive))
+#        info_msg('ReturnAirLevel: {}, SupplyAirLevel: {}, FanLevel: {}, IntakeFanActive: {}'.format(ReturnAirLevel, SupplyAirLevel, FanLevel, StrIntakeFanActive))
 
 def get_fan_status():
     # 0x07 0xF0 0x00 0x0B 0x00 0xB8 0x07 0x0F 
@@ -197,6 +197,7 @@ def get_fan_status():
     else:
         IntakeFanSpeed = int(data[7], 16)
         ExhaustFanSpeed = int(data[8], 16)  
+"""
         if int(''.join([str(int(data[9], 16)), str(int(data[10], 16))])) == 0:
             IntakeFanRPM = 0
         else:
@@ -205,12 +206,28 @@ def get_fan_status():
             ExhaustFanRPM = 0
         else:
             ExhaustFanRPM = int(1875000 / int(''.join([str(int(data[11], 16)), str(int(data[12], 16))])))
-
+""""
         publish_message(msg=str(IntakeFanSpeed), mqtt_path='comfoair/intakefanspeed')
         publish_message(msg=str(ExhaustFanSpeed), mqtt_path='comfoair/exhaustfanspeed')
 
-        debug_msg('IntakeFanSpeed {0}%, ExhaustFanSpeed {1}%, IntakeAirRPM {2}, ExhaustAirRPM {3}'.format(IntakeFanSpeed,ExhaustFanSpeed,IntakeFanRPM,ExhaustFanRPM))
-    
+#        debug_msg('IntakeFanSpeed {0}%, ExhaustFanSpeed {1}%, IntakeAirRPM {2}, ExhaustAirRPM {3}'.format(IntakeFanSpeed,ExhaustFanSpeed,IntakeFanRPM,ExhaustFanRPM))
+
+def get_bypass_status():
+    # 0x07 0xF0 0x00 0x0B 0x00 0xB8 0x07 0x0F 
+    # Checksum: 0xB8 (0x00 0x0B) = 0 + 11 + 0 + 173 = 184
+    # End: 0x07 0x0F
+
+    data = serial_command(b'\x07\xF0\x00\xD3\x00\xD3\x07\x0F')
+
+    if data == None:
+        warning_msg('function get_fan_status could not get serial data')
+    else:
+        BypassStatus = int(data[7], 16)
+        
+    info_message(msg=str(BypassStatus))
+    publish_message(msg=str(BypassStatus), mqtt_path='comfoair/bypassstatus')
+
+
 def get_filter_status():
     # 0x07 0xF0 0x00 0xD9 0x00 0x86 0x07 0x0F 
     # Start: 0x07 0xF0
@@ -223,7 +240,7 @@ def get_filter_status():
 
     if data == None:
         warning_msg('get_filter_status function could not get serial data')
-        time.sleep(2)
+#        time.sleep(2)
 #        get_filter_status()
     else:
         #print(data)
