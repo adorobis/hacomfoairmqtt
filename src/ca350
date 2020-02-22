@@ -129,10 +129,36 @@ def set_ventilation_level(nr):
             warning_msg('Changing the ventilation to {0} went wrong, did not receive an ACK after the set command'.format(nr))
             time.sleep(2)
             set_ventilation_level(nr)
+            get_ventilation_status()
+            get_fan_status()
     else:
         warning_msg('Changing the ventilation to {0} went wrong, did not receive an ACK after the set command'.format(nr))
         time.sleep(2)
         set_ventilation_level(nr)
+        get_ventilation_status()
+        get_fan_status()
+
+def set_pc_mode(nr):
+    if nr == 3:
+        data = serial_command(b'\x07\xF0\x00\x9B\x01\x03\x4C\x07\x0F')
+    elif nr == 0:
+        data = serial_command(b'\x07\xF0\x00\x9B\x01\x00\x49\x07\x0F')
+    elif nr == 1:
+        data = serial_command(b'\x07\xF0\x00\x9B\x01\x01\x4A\x07\x0F')
+    elif nr == 4:
+        data = serial_command(b'\x07\xF0\x00\x9B\x01\x04\x4D\x07\x0F')
+    else:
+        warning_msg('Wrong parameter: {0}'.format(nr))    
+    print(data)
+    if data:
+        if ( data[0] == '07' and data[1] == 'f3' ):
+            print(data)
+            info_msg('Changed RS232 mode to {0}'.format(nr))
+        else:
+            warning_msg('Changing the RS232 mode went wrong')
+
+    else:
+        warning_msg('Changing the RS232 mode went wrong')
 
 def set_comfort_temperature(nr):
     if nr == 15:
@@ -385,6 +411,7 @@ mqttc.loop_start()
 while True:
     try:
 #        get_ventilation_levels()
+#        set_pc_mode(3)
         get_temp()
         get_ventilation_status()
         get_filter_status()
