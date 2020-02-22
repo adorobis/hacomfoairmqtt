@@ -84,6 +84,9 @@ def on_message(client, userdata, message):
             fan_level=1
         elif selector == "20":
             fan_level=2
+    elif message.topic == "comfoair/comforttemp/set":
+        comforttemp = int(msg_data)
+        set_comfort_temperature(comforttemp)
     print('FanLevel ' + str(fan_level))
     if fan_level >= 0 and fan_level <= 4:
         set_ventilation_level(fan_level)
@@ -130,6 +133,50 @@ def set_ventilation_level(nr):
         warning_msg('Changing the ventilation to {0} went wrong, did not receive an ACK after the set command'.format(nr))
         time.sleep(2)
         set_ventilation_level(nr)
+
+def set_comfort_temperature(nr):
+    if nr == 15:
+        data = serial_command(b'\x07\xF0\x00\xD3\x01\x46\xC7\x07\x0F')
+    elif nr == 16:
+        data = serial_command(b'\x07\xF0\x00\xD3\x01\x48\xC9\x07\x0F')
+    elif nr == 17:
+        data = serial_command(b'\x07\xF0\x00\xD3\x01\x4A\xCB\x07\x0F')
+    elif nr == 18:
+        data = serial_command(b'\x07\xF0\x00\xD3\x01\x4C\xCD\x07\x0F')
+    elif nr == 19:
+        data = serial_command(b'\x07\xF0\x00\xD3\x01\x4E\xCF\x07\x0F')
+    elif nr == 20:
+        data = serial_command(b'\x07\xF0\x00\xD3\x01\x50\xD1\x07\x0F')
+    elif nr == 21:
+        data = serial_command(b'\x07\xF0\x00\xD3\x01\x52\xD3\x07\x0F')
+    elif nr == 22:
+        data = serial_command(b'\x07\xF0\x00\xD3\x01\x54\xD5\x07\x0F')
+    elif nr == 23:
+        data = serial_command(b'\x07\xF0\x00\xD3\x01\x56\xD7\x07\x0F')
+    elif nr == 24:
+        data = serial_command(b'\x07\xF0\x00\xD3\x01\x58\xD9\x07\x0F')
+    elif nr == 25:
+        data = serial_command(b'\x07\xF0\x00\xD3\x01\x5A\xDB\x07\x0F')        
+    elif nr == 26:
+        data = serial_command(b'\x07\xF0\x00\xD3\x01\x5C\xDD\x07\x0F')
+    elif nr == 27:
+        data = serial_command(b'\x07\xF0\x00\xD3\x01\x5E\xDF\x07\x0F')
+    else:
+        warning_msg('Wrong temperature provided: {0}. No changes made.'.format(nr))
+    if data:
+        if ( data[0] == '07' and data[1] == 'f3' ):
+            info_msg('Changed comfort temperature to {0}'.format(nr))
+            get_temp()
+            get_bypass_status()
+            
+        else:
+            warning_msg('Changing comfort temperature to {0} went wrong, did not receive an ACK after the set command'.format(nr))
+            time.sleep(2)
+            set_comfort_temperature(nr)
+    else:
+        warning_msg('Changing comfort temperature to {0} went wrong, did not receive an ACK after the set command'.format(nr))
+        time.sleep(2)
+        set_comfort_temperature(nr)
         
 def get_temp():
     # 0x07 0xF0 0x00 0xD1 0x00 0x7E 0x07 0x0F 
@@ -154,6 +201,43 @@ def get_temp():
         publish_message(msg=str(ReturnAirTemp), mqtt_path='comfoair/returntemp')
 
         debug_msg('OutsideAirTemp: {0}, SupplyAirTemp: {1}, ReturnAirTemp: {2}, ExhaustAirTemp: {3}, ComfortTemp: {4}'.format(OutsideAirTemp, SupplyAirTemp, ReturnAirTemp, ExhaustAirTemp, ComfortTemp))
+
+def get_ventilation_levels():
+    # 0x07 0xF0 0x00 0xD1 0x00 0x7A 0x07 0x0F 
+    # Checksum: 0x7A(0x00 0xCD) = 0 + 205 + 0 + 173 = 378
+    # End: 0x07 0x0F
+
+    data = serial_command(b'\x07\xF0\x00\xCD\x00\x7A\x07\x0F')
+    
+    if data == None:
+        warning_msg('get_temp function could not get serial data')
+    else:
+        OutAbsent = int(data[7], 16)
+        OutLow = int(data[8], 16)
+        OutMid = int(data[9], 16)
+        InAbsent = int(data[10], 16)
+        InLow = int(data[11], 16)
+        InMid = int(data[12], 16)
+        OutHigh = int(data[17], 16)
+        InHigh = int(data[18], 16)
+        
+        print(str(OutAbsent))
+        print(str(OutLow))
+        print(str(OutMid))
+        print(str(InAbsent))
+        print(str(InLow))
+        print(str(InMid))
+        print(str(OutHigh))
+        print(str(InHigh))
+        """       
+        publish_message(msg=str(ComfortTemp), mqtt_path='comfoair/comforttemp')
+        publish_message(msg=str(OutsideAirTemp), mqtt_path='comfoair/outsidetemp')
+        publish_message(msg=str(SupplyAirTemp), mqtt_path='comfoair/supplytemp')
+        publish_message(msg=str(ExhaustAirTemp), mqtt_path='comfoair/exhausttemp')    
+        publish_message(msg=str(ReturnAirTemp), mqtt_path='comfoair/returntemp')
+
+        debug_msg('OutsideAirTemp: {0}, SupplyAirTemp: {1}, ReturnAirTemp: {2}, ExhaustAirTemp: {3}, ComfortTemp: {4}'.format(OutsideAirTemp, SupplyAirTemp, ReturnAirTemp, ExhaustAirTemp, ComfortTemp))
+        """
 
 def get_ventilation_status():
     data = serial_command(b'\x07\xF0\x00\xCD\x00\x7A\x07\x0F')
@@ -259,9 +343,11 @@ def recon():
 def topic_subscribe():
     try:
         mqttc.subscribe("comfoair/on/set", 0)
-        info_msg('Successfull subscribed to the comfoair/on/set topics')
+        info_msg('Successfull subscribed to the comfoair/on/set topic')
         mqttc.subscribe("comfoair/speed/set", 0)
-        info_msg('Successfull subscribed to the comfoair/speed/set topics')
+        info_msg('Successfull subscribed to the comfoair/speed/set topic')
+        mqttc.subscribe("comfoair/comforttemp/set", 0)
+        info_msg('Successfull subscribed to the comfoair/comforttemp/set topic')
     except:
         warning_msg('There was an error while subscribing to the MQTT topic(s), trying again in 10 seconds')
         time.sleep(10)
@@ -298,6 +384,7 @@ ser = serial.Serial(port = SerialPort, baudrate = 9600, bytesize = serial.EIGHTB
 mqttc.loop_start()
 while True:
     try:
+#        get_ventilation_levels()
         get_temp()
         get_ventilation_status()
         get_filter_status()
