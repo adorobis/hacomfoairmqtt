@@ -26,6 +26,7 @@ import paho.mqtt.client as mqtt
 import time
 import serial
 import json
+import sys
 
 print("*****************************")
 print("* CA350 MQTT Home Assistant *")
@@ -93,21 +94,31 @@ def on_message(client, userdata, message):
         get_ventilation_status()
 
 def publish_message(msg, mqtt_path):                                                                      
-    mqttc.publish(mqtt_path, payload=msg, qos=0, retain=True)
-    time.sleep(0.1)
-    debug_msg('published message {0} on topic {1} at {2}'.format(msg, mqtt_path, time.asctime(time.localtime(time.time()))))
+    try:
+      mqttc.publish(mqtt_path, payload=msg, qos=0, retain=True)
+    except:
+      warning_msg('Publishing message '+msg+' to topic '+mqtt_path+' failed.')
+      warning_msg('Exception information:')
+      warning_msg(sys.exc_info())
+    else:
+      time.sleep(0.1)
+      debug_msg('published message {0} on topic {1} at {2}'.format(msg, mqtt_path, time.asctime(time.localtime(time.time()))))
 
 def serial_command(cmd):
-    data = []
-    ser.write(cmd)
-    time.sleep(2)
+    try:
+        data = []
+        ser.write(cmd)
+        time.sleep(2)
 
-    while ser.inWaiting() > 0:
-        data.append(ser.read(1).hex())
-
-    if len(data) > 0:
-        return data
-    else:
+        while ser.inWaiting() > 0:
+            data.append(ser.read(1).hex())
+        if len(data) > 0:
+            return data
+        else:
+            return None
+    except:
+        warning_msg('Serial command write and read exception:')
+        warning_msg(sys.exc_info())
         return None
 
 def set_ventilation_level(nr):
@@ -418,24 +429,28 @@ mqttc.on_disconnect = on_disconnect
 mqttc.connect(MQTTServer, port=1883, keepalive=45)
 
 # Open the serial port
-ser = serial.Serial(port = SerialPort, baudrate = 9600, bytesize = serial.EIGHTBITS, parity = serial.PARITY_NONE, stopbits = serial.STOPBITS_ONE)
-
-mqttc.loop_start()
-while True:
-    try:
-#        get_ventilation_levels()
-#        set_pc_mode(3)
-        get_temp()
-        get_ventilation_status()
-        get_filter_status()
-        get_fan_status()
-        get_bypass_status()
-        time.sleep(10)
-        pass
-    except KeyboardInterrupt:
-        mqttc.loop_stop()
-        ser.close()
-        break
+try:
+    ser = serial.Serial(port = SerialPort, baudrate = 9600, bytesize = serial.EIGHTBITS, parity = serial.PARITY_NONE, stopbits = serial.STOPBITS_ONE)
+except:
+    warning_msg('Opening serial port exception:')
+    warning_msg(sys.exc_info())
+else:
+    mqttc.loop_start()
+    while True:
+        try:
+    #        get_ventilation_levels()
+    #        set_pc_mode(3)
+            get_temp()
+            get_ventilation_status()
+            get_filter_status()
+            get_fan_status()
+            get_bypass_status()
+            time.sleep(10)
+            pass
+        except KeyboardInterrupt:
+            mqttc.loop_stop()
+            ser.close()
+            break
 
     
 # End of program
