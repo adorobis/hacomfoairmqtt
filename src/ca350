@@ -96,7 +96,7 @@ def on_message(client, userdata, message):
 def publish_message(msg, mqtt_path):                                                                      
     try:
       mqttc.publish(mqtt_path, payload=msg, qos=0, retain=True)
-    exception:
+    except:
       warning_msg('Publishing message '+msg+' to topic '+mqtt_path+' failed.')
       warning_msg('Exception information:')
       warning_msg(sys.exc_info())
@@ -116,7 +116,7 @@ def serial_command(cmd):
             return data
         else:
             return None
-    exception:
+    except:
         warning_msg('Serial command write and read exception:')
         warning_msg(sys.exc_info())
         return None
@@ -431,7 +431,7 @@ mqttc.connect(MQTTServer, port=1883, keepalive=45)
 # Open the serial port
 try:
     ser = serial.Serial(port = SerialPort, baudrate = 9600, bytesize = serial.EIGHTBITS, parity = serial.PARITY_NONE, stopbits = serial.STOPBITS_ONE)
-exception:
+except:
     warning_msg('Opening serial port exception:')
     warning_msg(sys.exc_info())
 else:
