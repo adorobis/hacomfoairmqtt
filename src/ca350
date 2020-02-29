@@ -66,27 +66,30 @@ def on_message(client, userdata, message):
     print(msg_data)
     if message.topic == "comfoair/speed/set":
         selector = msg_data
-        if selector == "00":
-            print("s1 is 1")
+        if selector == "10":
+            print("comfoair/speed/set is 10")
             fan_level=1
         elif "20" == selector:
-            print("s1 is 20")
+            print("comfoair/speed/set is 20")
             fan_level=2
         elif "30" == selector:
-            print("s1 is 30")
+            print("comfoair/speed/set is 30")
             fan_level=3
         elif "40" == selector:
-            print("s1 is 40")
+            print("comfoair/speed/set is 40")
             fan_level=4
     elif message.topic == "comfoair/on/set":
         selector = msg_data
         if selector == "10":
+            print("comfoair/on/set is 10")
             fan_level=1
         elif selector == "20":
+            print("comfoair/on/set is 20")
             fan_level=2
     elif message.topic == "comfoair/comforttemp/set":
         comforttemp = int(msg_data)
         set_comfort_temperature(comforttemp)
+        get_temp()
     print('FanLevel ' + str(fan_level))
     if fan_level >= 0 and fan_level <= 4:
         set_ventilation_level(fan_level)
@@ -125,6 +128,8 @@ def set_ventilation_level(nr):
     if data:
         if ( data[0] == '07' and data[1] == 'f3' ):
             info_msg('Changed the ventilation to {0}'.format(nr))
+            get_ventilation_status()
+            get_fan_status()
         else:
             warning_msg('Changing the ventilation to {0} went wrong, did not receive an ACK after the set command'.format(nr))
             time.sleep(2)
@@ -220,13 +225,18 @@ def get_temp():
             SupplyAirTemp = int(data[9], 16) / 2.0 - 20
             ReturnAirTemp = int(data[10], 16) / 2.0 - 20
             ExhaustAirTemp = int(data[11], 16) / 2.0 - 20
-
-            publish_message(msg=str(ComfortTemp), mqtt_path='comfoair/comforttemp')
-            publish_message(msg=str(OutsideAirTemp), mqtt_path='comfoair/outsidetemp')
-            publish_message(msg=str(SupplyAirTemp), mqtt_path='comfoair/supplytemp')
-            publish_message(msg=str(ExhaustAirTemp), mqtt_path='comfoair/exhausttemp')    
-            publish_message(msg=str(ReturnAirTemp), mqtt_path='comfoair/returntemp')
-            debug_msg('OutsideAirTemp: {0}, SupplyAirTemp: {1}, ReturnAirTemp: {2}, ExhaustAirTemp: {3}, ComfortTemp: {4}'.format(OutsideAirTemp, SupplyAirTemp, ReturnAirTemp, ExhaustAirTemp, ComfortTemp))
+            if ComfortTemp > 10 and ComfortTemp < 30:
+                publish_message(msg=str(ComfortTemp), mqtt_path='comfoair/comforttemp')
+                publish_message(msg=str(OutsideAirTemp), mqtt_path='comfoair/outsidetemp')
+                publish_message(msg=str(SupplyAirTemp), mqtt_path='comfoair/supplytemp')
+                publish_message(msg=str(ExhaustAirTemp), mqtt_path='comfoair/exhausttemp')    
+                publish_message(msg=str(ReturnAirTemp), mqtt_path='comfoair/returntemp')
+                debug_msg('OutsideAirTemp: {0}, SupplyAirTemp: {1}, ReturnAirTemp: {2}, ExhaustAirTemp: {3}, ComfortTemp: {4}'.format(OutsideAirTemp, SupplyAirTemp, ReturnAirTemp, ExhaustAirTemp, ComfortTemp))
+            else:
+                warning_msg('get_tem returned bad temp data. Retrying in 2 sec')
+                warning_msg('OutsideAirTemp: {0}, SupplyAirTemp: {1}, ReturnAirTemp: {2}, ExhaustAirTemp: {3}, ComfortTemp: {4}'.format(OutsideAirTemp, SupplyAirTemp, ReturnAirTemp, ExhaustAirTemp, ComfortTemp))
+                time.sleep(2)
+                get_temp()
         else:
             warning_msg('get_temp function data array too short')
 
