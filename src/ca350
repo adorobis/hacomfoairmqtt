@@ -436,7 +436,14 @@ mqttc.on_message = on_message
 mqttc.on_disconnect = on_disconnect
 
 # Connect to the MQTT server
-mqttc.connect(MQTTServer, port=1883, keepalive=45)
+while True:
+    try:
+        mqttc.connect(MQTTServer, port=1883, keepalive=45)
+        break
+    except:
+        warning_msg('Can\'t connect to MQTT broker. Retrying in 10 seconds.')
+        time.sleep(10)
+        pass
 
 # Open the serial port
 try:
