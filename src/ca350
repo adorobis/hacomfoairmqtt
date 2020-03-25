@@ -21,6 +21,7 @@ start script with python3.7 ca350
 
 SerialPort='/dev/cuau3'            # Serial port CA350 RS232 direct or via USB TTL adapter
 MQTTServer='10.144.1.103'          # IP MQTT broker
+refresh_interval=10                # Interval at which data from RS232 will be polled
 
 import paho.mqtt.client as mqtt
 import time
@@ -462,7 +463,7 @@ else:
             get_filter_status()
             get_fan_status()
             get_bypass_status()
-            time.sleep(10)
+            time.sleep(refresh_interval)
             pass
         except KeyboardInterrupt:
             mqttc.loop_stop()
