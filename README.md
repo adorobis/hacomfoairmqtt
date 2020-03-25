@@ -1,5 +1,6 @@
 # hacomfoairmqtt
 Home Assistant integration for ComfoAir 350 device via serial communication and MQTT
+This work is based on scripts created for Domoticz integration https://github.com/AlbertHakvoort/StorkAir-Zehnder-WHR-930-Domoticz-MQTT
 
 configuration.yaml - sample entries for MQTT Fan integration device
 
