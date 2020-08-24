@@ -156,8 +156,8 @@ def set_ventilation_level(nr):
         get_fan_status()
 def set_fan_levels():
 
-#    data = serial_command(b'\x07\xF0\x00\xCF\x09\x0F\x19\x28\x0F\x19\x28\x46\x46\x00\xB0\x07\x0F')
-    data = serial_command(b'\x07\xF0\x00\xCF\x09\x0E\x14\x28\x0E\x14\x28\x46\x46\x00\x9D\x07\x0F')
+    data = serial_command(b'\x07\xF0\x00\xCF\x09\x0F\x19\x28\x0F\x19\x28\x46\x46\x00\xB1\x07\x0F')
+#    data = serial_command(b'\x07\xF0\x00\xCF\x09\x0E\x14\x28\x0E\x14\x28\x46\x46\x00\x9D\x07\x0F')
 
     if data:
         if ( data[0] == '07' and data[1] == 'f3' ):
@@ -173,7 +173,7 @@ def set_fan_levels():
             get_ventilation_status()
             get_fan_status()
     else:
-        warning_msg('Changing the ventilation to {0} went wrong, did not receive an ACK after the set command')
+        warning_msg('Changing the fan levels went wrong, did not receive an ACK after the set command')
         time.sleep(2)
         set_fan_levels()
         get_ventilation_levels()
@@ -473,14 +473,15 @@ else:
     mqttc.loop_start()
     while True:
         try:
-    #        get_ventilation_levels()
+            get_ventilation_levels()
+            set_fan_levels()
+            get_ventilation_levels()
     #        set_pc_mode(3)
-    #        set_fan_levels()
-            get_temp()
-            get_ventilation_status()
-            get_filter_status()
-            get_fan_status()
-            get_bypass_status()
+    #        get_temp()
+    #        get_ventilation_status()
+    #        get_filter_status()
+    #        get_fan_status()
+    #        get_bypass_status()
             time.sleep(refresh_interval)
             pass
         except KeyboardInterrupt:
