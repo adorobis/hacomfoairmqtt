@@ -373,12 +373,12 @@ def get_bypass_status():
     else:
         if len(data) > 8:
             BypassStatus = int(data[10], 16)
-            WinterMode = int(data[13],16)
+            SummerMode = int(data[13],16)
             publish_message(msg=str(BypassStatus), mqtt_path='comfoair/bypassstatus')
-            if WinterMode==1:
-                publish_message(msg='Winter', mqtt_path='comfoair/bypassmode')
-            else:
+            if SummerMode==1:
                 publish_message(msg='Summer', mqtt_path='comfoair/bypassmode')
+            else:
+                publish_message(msg='Winter', mqtt_path='comfoair/bypassmode')
         else:
             warning_msg('function get_bypass_status data array too short')
 
