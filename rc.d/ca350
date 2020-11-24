@@ -6,7 +6,7 @@
 #
 # ca350_enable: Set to YES to enable the ca350 service.
 #		Default: NO
-# ca350_user: The user account used to run the appdaemon daemon.
+# ca350_user: The user account used to run the ca350 daemon.
 #		This is optional, however do not specifically set this to an
 #		empty string as this will cause the daemon to run as root.
 #		Default: hass
@@ -15,7 +15,7 @@
 #		empty string as this will cause the daemon to run with group wheel.
 #		Default: hass
 # ca350_venv: Directory where ca350 virtualenv is located.
-#		Default: "/srv/ca350"
+#		Default: "/usr/local/share/ca350"
 #
 # -------------------------------------------------------
 # Copy this file to '/usr/local/etc/rc.d/ca350' 
@@ -33,17 +33,19 @@ pidfile="/var/run/${name}_daemon.pid"
 logfile="/var/log/${name}_daemon.log"
 
 : ${ca350_enable:="YES"}
-: ${ca350_user:="hass"}
-: ${ca350_group:="hass"}
-: ${ca350_venv:="/srv/ca350"}
+: ${ca350_user:="homeassistant"}
+: ${ca350_group:="homeassistant"}
+: ${appdaemon_group:="`id -gn ${ca350_user}`"}
+: ${ca350_venv:="/usr/local/share/ca350"}
 
 command="/usr/sbin/daemon"
+
 extra_commands="restart test"
 
 start_precmd=${name}_precmd
 ca350_precmd() {
     rc_flags="-f -o ${logfile} -P ${pidfile} -p ${pidfile_child} ${ca350_venv}/bin/ca350 ${rc_flags}"
-    [ ! -e "${pidfile_child}" ] && install -g ${appdaemon_group} -o ${ca350_user} -- /dev/null "${pidfile_child}"
+    [ ! -e "${pidfile_child}" ] && install -g ${ca350_group} -o ${ca350_user} -- /dev/null "${pidfile_child}"
     [ ! -e "${pidfile}" ] && install -g ${ca350_group} -o ${ca350_user} -- /dev/null "${pidfile}"
     [ ! -e "${logfile}" ] && rm -f -- "${logfile}"
     install -g ${ca350_group} -o ${ca350_user} -- /dev/null "${logfile}"
