@@ -14,9 +14,15 @@ todo :
 - check on faulty messages
 - serial check
 The following packages are needed:
-sudo pkg install py37-serial python3-pip python3-yaml
-sudo pip3 install paho-mqtt
-start script with python3.7 ca350
+sudo pkg install python3-pip python3-yaml
+create virtual environment: 
+python3 -m venv /usr/local/share/ca350/bin
+install packages in the venv:
+source bin/activate.csh
+sudo pip3 install paho-mqtt pyserial
+deactivate
+to manually run the app in command line:
+python3.8 ca350
 """
 
 SerialPort='/dev/cuau3'            # Serial port CA350 RS232 direct or via USB TTL adapter
