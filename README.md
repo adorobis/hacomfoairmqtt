@@ -20,13 +20,13 @@ Daemon config file:
 Installation instructions:
 1. The following packages are needed:
 `sudo pkg install python3-pip python3-yaml`
-2. Create directory for the application and copy `src/ca350` script to it
+2. Create directory for the application `/usr/local/share/ca350/bin/` and copy `src/ca350` script to it
 3. Update the script as required (serial port and MQTT server mainly)
 4. Create virtual environment: 
 `python3 -m venv /usr/local/share/ca350/bin/`
 5. install packages in the venv:
 ```
-source bin/activate.csh
+source /usr/local/share/ca350/bin/activate.csh
 sudo pip3 install paho-mqtt pyserial
 deactivate
 ```
