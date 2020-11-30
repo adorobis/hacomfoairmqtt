@@ -10,6 +10,24 @@ rc.d/ca350 - rc.d script to set up the service in FreeNAS jail virtual python en
 
 File locations when installed on FreeNAS jail:
 Python script: 
-/srv/ca350/bin/ca350
+/usr/local/share/ca350/bin
 Daemon config file: 
 /usr/local/etc/rc.d/ca350
+
+
+Installation instructions:
+1. The following packages are needed:
+sudo pkg install python3-pip python3-yaml
+2. Create directory for the application and copy src/ca350 script to it
+3. Create virtual environment: 
+python3 -m venv /usr/local/share/ca350/bin/
+4. install packages in the venv:
+source bin/activate.csh
+sudo pip3 install paho-mqtt pyserial
+deactivate
+5. Copy rc.d/ca350 script to the directory:
+/usr/local/etc/rc.d/
+6. Enable the service:
+service ca350 enable
+7. Start the service
+service ca350 start
