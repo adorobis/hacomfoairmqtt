@@ -36,3 +36,6 @@ deactivate
 `service ca350 enable`
 8. Start the service
 `service ca350 start`
+
+TODO:
+Create installation script for automatic installation of the script, venv, dependencies and the service. Any help welcome!
