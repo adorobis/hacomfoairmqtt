@@ -257,27 +257,29 @@ def get_temp():
     if data == None:
         warning_msg('get_temp function could not get serial data')
     else:
-        if len(data) > 11:
-            ComfortTemp = int(data[7], 16) / 2 - 20
-            OutsideAirTemp = int(data[8], 16) / 2.0 - 20
-            SupplyAirTemp = int(data[9], 16) / 2.0 - 20
-            ReturnAirTemp = int(data[10], 16) / 2.0 - 20
-            ExhaustAirTemp = int(data[11], 16) / 2.0 - 20
-            if ComfortTemp > 10 and ComfortTemp < 30:
-                publish_message(msg=str(ComfortTemp), mqtt_path='comfoair/comforttemp')
-                publish_message(msg=str(OutsideAirTemp), mqtt_path='comfoair/outsidetemp')
-                publish_message(msg=str(SupplyAirTemp), mqtt_path='comfoair/supplytemp')
-                publish_message(msg=str(ExhaustAirTemp), mqtt_path='comfoair/exhausttemp')    
-                publish_message(msg=str(ReturnAirTemp), mqtt_path='comfoair/returntemp')
-                debug_msg('OutsideAirTemp: {0}, SupplyAirTemp: {1}, ReturnAirTemp: {2}, ExhaustAirTemp: {3}, ComfortTemp: {4}'.format(OutsideAirTemp, SupplyAirTemp, ReturnAirTemp, ExhaustAirTemp, ComfortTemp))
+        if ( data[0] == '07' and data[1] == 'f3' ):
+            if len(data) > 11:
+                ComfortTemp = int(data[7], 16) / 2 - 20
+                OutsideAirTemp = int(data[8], 16) / 2.0 - 20
+                SupplyAirTemp = int(data[9], 16) / 2.0 - 20
+                ReturnAirTemp = int(data[10], 16) / 2.0 - 20
+                ExhaustAirTemp = int(data[11], 16) / 2.0 - 20
+                if ComfortTemp > 10 and ComfortTemp < 30:
+                    publish_message(msg=str(ComfortTemp), mqtt_path='comfoair/comforttemp')
+                    publish_message(msg=str(OutsideAirTemp), mqtt_path='comfoair/outsidetemp')
+                    publish_message(msg=str(SupplyAirTemp), mqtt_path='comfoair/supplytemp')
+                    publish_message(msg=str(ExhaustAirTemp), mqtt_path='comfoair/exhausttemp')    
+                    publish_message(msg=str(ReturnAirTemp), mqtt_path='comfoair/returntemp')
+                    debug_msg('OutsideAirTemp: {0}, SupplyAirTemp: {1}, ReturnAirTemp: {2}, ExhaustAirTemp: {3}, ComfortTemp: {4}'.format(OutsideAirTemp, SupplyAirTemp, ReturnAirTemp, ExhaustAirTemp, ComfortTemp))
+                else:
+                    warning_msg('get_temp returned bad temp data. Retrying in 2 sec')
+                    warning_msg('OutsideAirTemp: {0}, SupplyAirTemp: {1}, ReturnAirTemp: {2}, ExhaustAirTemp: {3}, ComfortTemp: {4}'.format(OutsideAirTemp, SupplyAirTemp, ReturnAirTemp, ExhaustAirTemp, ComfortTemp))
+                    time.sleep(2)
+                    get_temp()
             else:
-                warning_msg('get_temp returned bad temp data. Retrying in 2 sec')
-                warning_msg('OutsideAirTemp: {0}, SupplyAirTemp: {1}, ReturnAirTemp: {2}, ExhaustAirTemp: {3}, ComfortTemp: {4}'.format(OutsideAirTemp, SupplyAirTemp, ReturnAirTemp, ExhaustAirTemp, ComfortTemp))
-                time.sleep(2)
-                get_temp()
+                warning_msg('get_temp function data array too short')
         else:
-            warning_msg('get_temp function data array too short')
-
+            warning_msg('get_temp function wrong ACK message')
 def get_ventilation_levels():
     # 0x07 0xF0 0x00 0xD1 0x00 0x7A 0x07 0x0F 
     # Checksum: 0x7A(0x00 0xCD) = 0 + 205 + 0 + 173 = 378
@@ -288,27 +290,29 @@ def get_ventilation_levels():
     if data == None:
         warning_msg('get_ventilation_levels function could not get serial data')
     else:
-        if len(data) > 18:
-            OutAbsent = int(data[7], 16)
-            OutLow = int(data[8], 16)
-            OutMid = int(data[9], 16)
-            InAbsent = int(data[10], 16)
-            InLow = int(data[11], 16)
-            InMid = int(data[12], 16)
-            OutHigh = int(data[17], 16)
-            InHigh = int(data[18], 16)
-            print("Serial ventilation levels data: "+str(data))
-            print(str(OutAbsent))
-            print(str(OutLow))
-            print(str(OutMid))
-            print(str(OutHigh))
-            print(str(InAbsent))
-            print(str(InLow))
-            print(str(InMid))
-            print(str(InHigh))
+        if ( data[0] == '07' and data[1] == 'f3' ):
+            if len(data) > 18:
+                OutAbsent = int(data[7], 16)
+                OutLow = int(data[8], 16)
+                OutMid = int(data[9], 16)
+                InAbsent = int(data[10], 16)
+                InLow = int(data[11], 16)
+                InMid = int(data[12], 16)
+                OutHigh = int(data[17], 16)
+                InHigh = int(data[18], 16)
+                print("Serial ventilation levels data: "+str(data))
+                print(str(OutAbsent))
+                print(str(OutLow))
+                print(str(OutMid))
+                print(str(OutHigh))
+                print(str(InAbsent))
+                print(str(InLow))
+                print(str(InMid))
+                print(str(InHigh))
+            else:
+                warning_msg('get_ventilation_levels function data array too short')
         else:
-            warning_msg('get_ventilation_levels function data array too short')
-
+            warning_msg('get_ventilation_levels function wrong ACK message')
 
 def get_ventilation_status():
     data = serial_command(b'\x07\xF0\x00\xCD\x00\x7A\x07\x0F')
@@ -316,33 +320,36 @@ def get_ventilation_status():
     if data == None:
         warning_msg('get_ventilation_status function could not get serial data')
     else:
-        if len(data) > 16:
-            ReturnAirLevel = int(data[13], 16)
-            SupplyAirLevel = int(data[14], 16)
-            FanLevel = int(data[15], 16)
-            IntakeFanActive = int(data[16], 16)
+        if ( data[0] == '07' and data[1] == 'f3' ):
+            if len(data) > 16:
+                ReturnAirLevel = int(data[13], 16)
+                SupplyAirLevel = int(data[14], 16)
+                FanLevel = int(data[15], 16)
+                IntakeFanActive = int(data[16], 16)
 
-            if IntakeFanActive == 1:
-                StrIntakeFanActive = 'Yes'
-            elif IntakeFanActive == 0:
-                StrIntakeFanActive = 'No'
-            else:
-                StrIntakeFanActive = 'Unknown'
+                if IntakeFanActive == 1:
+                    StrIntakeFanActive = 'Yes'
+                elif IntakeFanActive == 0:
+                    StrIntakeFanActive = 'No'
+                else:
+                    StrIntakeFanActive = 'Unknown'
 
-            if FanLevel == 1:
-                publish_message(msg='10', mqtt_path='comfoair/on/state')
-                publish_message(msg='20', mqtt_path='comfoair/speed/state')
-            elif FanLevel == 2 or FanLevel == 3 or FanLevel == 4:
-                publish_message(msg=str(FanLevel*10), mqtt_path='comfoair/speed/state')
-                publish_message(msg='20', mqtt_path='comfoair/on/state')
+                if FanLevel == 1:
+                    publish_message(msg='10', mqtt_path='comfoair/on/state')
+                    publish_message(msg='20', mqtt_path='comfoair/speed/state')
+                elif FanLevel == 2 or FanLevel == 3 or FanLevel == 4:
+                    publish_message(msg=str(FanLevel*10), mqtt_path='comfoair/speed/state')
+                    publish_message(msg='20', mqtt_path='comfoair/on/state')
+                else:
+                    warning_msg('Wrong FanLevel value: {0}'.format(FanLevel))
+                    time.sleep(2)
+                    get_ventilation_status()
             else:
-                warning_msg('Wrong FanLevel value: {0}'.format(FanLevel))
+                warning_msg('get_ventilation_status function data array too short')
                 time.sleep(2)
                 get_ventilation_status()
         else:
-            warning_msg('get_ventilation_status function data array too short')
-            time.sleep(2)
-            get_ventilation_status()
+            warning_msg('get_ventilation_status function wrong ACK message')
             
 #        info_msg('ReturnAirLevel: {}, SupplyAirLevel: {}, FanLevel: {}, IntakeFanActive: {}'.format(ReturnAirLevel, SupplyAirLevel, FanLevel, StrIntakeFanActive))
 
@@ -356,14 +363,16 @@ def get_fan_status():
     if data == None:
         warning_msg('function get_fan_status could not get serial data')
     else:
-        if len(data) > 8:
-            IntakeFanSpeed = int(data[7], 16)
-            ExhaustFanSpeed = int(data[8], 16)  
-            publish_message(msg=str(IntakeFanSpeed), mqtt_path='comfoair/intakefanspeed')
-            publish_message(msg=str(ExhaustFanSpeed), mqtt_path='comfoair/exhaustfanspeed')
+        if ( data[0] == '07' and data[1] == 'f3' ):
+            if len(data) > 8:
+                IntakeFanSpeed = int(data[7], 16)
+                ExhaustFanSpeed = int(data[8], 16)  
+                publish_message(msg=str(IntakeFanSpeed), mqtt_path='comfoair/intakefanspeed')
+                publish_message(msg=str(ExhaustFanSpeed), mqtt_path='comfoair/exhaustfanspeed')
+            else:
+                warning_msg('function get_fan_status data array too short')
         else:
-            warning_msg('function get_fan_status data array too short')
-
+            warning_msg('function get_fan_status wrong ACK message')
 #        debug_msg('IntakeFanSpeed {0}%, ExhaustFanSpeed {1}%, IntakeAirRPM {2}, ExhaustAirRPM {3}'.format(IntakeFanSpeed,ExhaustFanSpeed,IntakeFanRPM,ExhaustFanRPM))
 
 def get_bypass_status():
@@ -376,16 +385,19 @@ def get_bypass_status():
     if data == None:
         warning_msg('function get_bypass_status could not get serial data')
     else:
-        if len(data) > 13:
-            BypassStatus = int(data[10], 16)
-            SummerMode = int(data[13],16)
-            publish_message(msg=str(BypassStatus), mqtt_path='comfoair/bypassstatus')
-            if SummerMode==1:
-                publish_message(msg='Summer', mqtt_path='comfoair/bypassmode')
+        if ( data[0] == '07' and data[1] == 'f3' ):
+            if len(data) > 13:
+                BypassStatus = int(data[10], 16)
+                SummerMode = int(data[13],16)
+                publish_message(msg=str(BypassStatus), mqtt_path='comfoair/bypassstatus')
+                if SummerMode==1:
+                    publish_message(msg='Summer', mqtt_path='comfoair/bypassmode')
+                else:
+                    publish_message(msg='Winter', mqtt_path='comfoair/bypassmode')
             else:
-                publish_message(msg='Winter', mqtt_path='comfoair/bypassmode')
+                warning_msg('function get_bypass_status data array too short')
         else:
-            warning_msg('function get_bypass_status data array too short')
+            warning_msg('function get_bypass_status wrong ACK message')
 
 def get_filter_status():
     # 0x07 0xF0 0x00 0xD9 0x00 0x86 0x07 0x0F 
@@ -401,18 +413,21 @@ def get_filter_status():
         warning_msg('get_filter_status function could not get serial data')
 
     else:
-        if len(data) > 18:
-            if int(data[18], 16) == 0:
-                FilterStatus = 'Ok'
-            elif int(data[18], 16) == 1:
-                FilterStatus = 'Full'
+        if ( data[0] == '07' and data[1] == 'f3' ):
+            if len(data) > 18:
+                if int(data[18], 16) == 0:
+                    FilterStatus = 'Ok'
+                elif int(data[18], 16) == 1:
+                    FilterStatus = 'Full'
+                else:
+                    FilterStatus = 'Unknown'
+                publish_message(msg=str(FilterStatus), mqtt_path='comfoair/filterstatus')
+                debug_msg('FilterStatus: {0}'.format(FilterStatus))
             else:
-                FilterStatus = 'Unknown'
-            publish_message(msg=str(FilterStatus), mqtt_path='comfoair/filterstatus')
-            debug_msg('FilterStatus: {0}'.format(FilterStatus))
+                warning_msg('get_filter_status data array too short')
         else:
-            warning_msg('get_filter_status data array too short')
-    
+            warning_msg('get_filter_status wrong ACK message')
+            
 def recon():
     try:
         mqttc.reconnect()
