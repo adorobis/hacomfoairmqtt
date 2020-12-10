@@ -14,15 +14,9 @@ todo :
 - check on faulty messages
 - serial check
 The following packages are needed:
-sudo pkg install python3-pip python3-yaml
-create virtual environment: 
-python3 -m venv /usr/local/share/ca350/bin
-install packages in the venv:
-source bin/activate.csh
-sudo pip3 install paho-mqtt pyserial
-deactivate
-to manually run the app in command line:
-python3.8 ca350
+sudo pkg install py37-serial python3-pip python3-yaml
+sudo pip3 install paho-mqtt
+start script with python3.7 ca350
 """
 
 SerialPort='/dev/cuau3'            # Serial port CA350 RS232 direct or via USB TTL adapter
@@ -342,9 +336,13 @@ def get_ventilation_status():
                 publish_message(msg=str(FanLevel*10), mqtt_path='comfoair/speed/state')
                 publish_message(msg='20', mqtt_path='comfoair/on/state')
             else:
-                publish_message(msg='10', mqtt_path='comfoair/on/state')
+                warning_msg('Wrong FanLevel value: {0}'.format(FanLevel))
+                time.sleep(2)
+                get_ventilation_status()
         else:
-            warning_msg('get_ventilation_status function data array to')
+            warning_msg('get_ventilation_status function data array too short')
+            time.sleep(2)
+            get_ventilation_status()
             
 #        info_msg('ReturnAirLevel: {}, SupplyAirLevel: {}, FanLevel: {}, IntakeFanActive: {}'.format(ReturnAirLevel, SupplyAirLevel, FanLevel, StrIntakeFanActive))
 
