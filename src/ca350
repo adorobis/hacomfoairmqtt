@@ -1,4 +1,4 @@
-#!/usr/bin/python3.7
+#!/usr/local/share/ca350/bin/python3.8
 # -*- coding: utf-8 -*-
 
 """
@@ -19,9 +19,9 @@ sudo pip3 install paho-mqtt
 start script with python3.7 ca350
 """
 
-SerialPort='/dev/ttyUSB0'            # Serial port CA350 RS232 direct or via USB TTL adapter
-MQTTServer='192.168.100.4'           # IP MQTT broker
-refresh_interval=10                  # Interval at which data from RS232 will be polled
+SerialPort='/dev/cuau3'            # Serial port CA350 RS232 direct or via USB TTL adapter
+MQTTServer='10.144.1.103'          # IP MQTT broker
+refresh_interval=10                # Interval in seconds at which data from RS232 will be polled
 
 import paho.mqtt.client as mqtt
 import time
