@@ -1,4 +1,4 @@
-#!/srv/ca350/bin/python3.7
+#!/usr/bin/python3.7
 # -*- coding: utf-8 -*-
 
 """
@@ -19,9 +19,9 @@ sudo pip3 install paho-mqtt
 start script with python3.7 ca350
 """
 
-SerialPort='/dev/cuau3'            # Serial port CA350 RS232 direct or via USB TTL adapter
-MQTTServer='10.144.1.103'          # IP MQTT broker
-refresh_interval=10                # Interval at which data from RS232 will be polled
+SerialPort='/dev/ttyUSB0'            # Serial port CA350 RS232 direct or via USB TTL adapter
+MQTTServer='192.168.100.4'           # IP MQTT broker
+refresh_interval=10                  # Interval at which data from RS232 will be polled
 
 import paho.mqtt.client as mqtt
 import time
@@ -288,7 +288,6 @@ def get_ventilation_levels():
         publish_message(msg=str(SupplyAirTemp), mqtt_path='comfoair/supplytemp')
         publish_message(msg=str(ExhaustAirTemp), mqtt_path='comfoair/exhausttemp')    
         publish_message(msg=str(ReturnAirTemp), mqtt_path='comfoair/returntemp')
-
         debug_msg('OutsideAirTemp: {0}, SupplyAirTemp: {1}, ReturnAirTemp: {2}, ExhaustAirTemp: {3}, ComfortTemp: {4}'.format(OutsideAirTemp, SupplyAirTemp, ReturnAirTemp, ExhaustAirTemp, ComfortTemp))
         """
 
@@ -415,6 +414,7 @@ def topic_subscribe():
         topic_subscribe()
 
 def on_connect(client, userdata, flags, rc):
+    publish_message("online","comfoair/status")
     topic_subscribe()
     
 def on_disconnect(client, userdata, rc):
@@ -435,6 +435,8 @@ mqttc = mqtt.Client('CA350')
 mqttc.on_connect = on_connect
 mqttc.on_message = on_message
 mqttc.on_disconnect = on_disconnect
+mqttc.will_set("comfoair/status",payload=None, qos=0, retain=False)
+
 
 # Connect to the MQTT server
 while True:
@@ -456,8 +458,8 @@ else:
     mqttc.loop_start()
     while True:
         try:
-    #        get_ventilation_levels()
-    #        set_pc_mode(3)
+#           get_ventilation_levels()
+            set_pc_mode(3)
             get_temp()
             get_ventilation_status()
             get_filter_status()
