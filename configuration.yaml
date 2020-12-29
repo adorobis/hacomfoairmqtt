@@ -18,3 +18,12 @@ fan:
       - low
       - medium
       - high
+
+
+binary_sensor:   
+  - platform: command_line
+    command: '/home/homeassistant/homeassistant/servicetest'
+    payload_on: 'running'
+    payload_off: 'stopped'
+    name: CA350 service
+    scan_interval: 30
