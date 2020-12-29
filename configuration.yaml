@@ -1,8 +1,9 @@
 #Zehnder ComfoAir CA350
-#Example configuratio.yaml entries that create fan device type and integrate well with controlling ventilation levels of the CA350 unit
+#Example configuration.yaml entries that create fan device type and integrate well with controlling ventilation levels of the CA350 unit
 fan:
   - platform: mqtt
     name: "ComfoAir"
+    availability_topic: "comfoair/status"
     state_topic: "comfoair/on/state"
     command_topic: "comfoair/on/set"
     speed_state_topic: "comfoair/speed/state"
@@ -18,12 +19,3 @@ fan:
       - low
       - medium
       - high
-
-
-binary_sensor:   
-  - platform: command_line
-    command: '/home/homeassistant/homeassistant/servicetest'
-    payload_on: 'running'
-    payload_off: 'stopped'
-    name: CA350 service
-    scan_interval: 30
