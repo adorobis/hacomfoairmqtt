@@ -27,7 +27,7 @@ MQTTKeepalive=45                      # MQTT broker - keepalive
 MQTTUser = False                      # MQTT broker - user - default: 0 (disabled/no authentication)
 MQTTPassword = False                  # MQTT broker - password - default: 0 (disabled/no authentication)
 HAEnableAutoDiscoveryFan = True       # Home Assistant send auto discovery for fan
-HAEnableAutoDiscoveryTemp = True      # Home Assistant send auto discovery for temperatures
+HAEnableAutoDiscoverySensors = True   # Home Assistant send auto discovery for temperatures
 
 #Todo: HA AD Climate is work in progress
 HAEnableAutoDiscoveryClimate = False  # Work in Progress: Home Assistant send auto discovery for climate
@@ -93,6 +93,14 @@ def on_message(client, userdata, message):
         elif "40" == selector:
             print("comfoair/speed/set is 40")
             fan_level=4
+    elif message.topic == "comfoair/ha_climate_mode/set":
+        selector = msg_data
+        if selector == "off":
+            print("comfoair/on/set is 10")
+            fan_level=1  
+        elif selector == "fan_only":
+            print("comfoair/on/set is 20")
+            fan_level=2 
     elif message.topic == "comfoair/on/set":
         selector = msg_data
         if selector == "10":
@@ -359,10 +367,12 @@ def get_ventilation_status():
 
                 if FanLevel == 1:
                     publish_message(msg='10', mqtt_path='comfoair/on/state')
+                    publish_message(msg='off', mqtt_path='comfoair/ha_climate_mode')
                     publish_message(msg='20', mqtt_path='comfoair/speed/state')
                 elif FanLevel == 2 or FanLevel == 3 or FanLevel == 4:
                     publish_message(msg=str(FanLevel*10), mqtt_path='comfoair/speed/state')
                     publish_message(msg='20', mqtt_path='comfoair/on/state')
+                    publish_message(msg='fan_only', mqtt_path='comfoair/ha_climate_mode')
                 else:
                     warning_msg('Wrong FanLevel value: {0}'.format(FanLevel))
                     time.sleep(2)
@@ -440,11 +450,15 @@ def get_filter_status():
             if len(data) > 18:
                 if int(data[18], 16) == 0:
                     FilterStatus = 'Ok'
+                    FilterStatusBinary = 1
                 elif int(data[18], 16) == 1:
                     FilterStatus = 'Full'
+                    FilterStatusBinary = 0
                 else:
                     FilterStatus = 'Unknown'
+                    FilterStatusBinary = 0
                 publish_message(msg=str(FilterStatus), mqtt_path='comfoair/filterstatus')
+                publish_message(msg=int(FilterStatusBinary), mqtt_path='comfoair/filterstatus_binary')
                 debug_msg('FilterStatus: {0}'.format(FilterStatus))
             else:
                 warning_msg('get_filter_status data array too short')
@@ -469,6 +483,8 @@ def topic_subscribe():
         info_msg('Successfull subscribed to the comfoair/speed/set topic')
         mqttc.subscribe("comfoair/comforttemp/set", 0)
         info_msg('Successfull subscribed to the comfoair/comforttemp/set topic')
+        mqttc.subscribe("comfoair/ha_climate_mode/set", 0)
+        info_msg('Successfull subscribed to the comfoair/ha_climate_mode/set topic')
     except:
         warning_msg('There was an error while subscribing to the MQTT topic(s), trying again in 10 seconds')
         time.sleep(10)
@@ -481,21 +497,37 @@ def on_connect(client, userdata, flags, rc):
         publish_message('{"name":"ca350_fan","avty_t":"comfoair/status","pl_avail":"online","pl_not_avail":"offline","stat_t": "comfoair/on/state","cmd_t": "comfoair/on/set","spd_stat_t": "comfoair/speed/state","spd_cmd_t": "comfoair/speed/set","pl_on": "20","pl_off": "10","pl_lo_spd": "20","pl_med_spd": "30","pl_hi_spd": "40","spds": ["off","low","medium","high"]}',"homeassistant/fan/ca350_fan/config")
     else:
         delete_message("homeassistant/climate/ca350_fan/config")
-    if HAEnableAutoDiscoveryTemp is True : 
-        info_msg('Home Assistant MQTT Autodiscovery Topic Set: homeassistant/sensor/ca350_temp_[name]/config')
-        publish_message('{"name":"ca350_temp_outsidetemp","avty_t":"comfoair/status","pl_avail":"online","pl_not_avail":"offline","device_class":"temperature","state_topic":"comfoair/outsidetemp","unit_of_measurement":"°C","value_template":"{{ value_json.temperature }}"}',"homeassistant/sensor/ca350_temp_outsidetemp/config")
-        publish_message('{"name":"ca350_temp_supplytemp","avty_t":"comfoair/status","pl_avail":"online","pl_not_avail":"offline","device_class":"temperature","state_topic":"comfoair/supplytemp","unit_of_measurement":"°C","value_template":"{{ value_json.temperature }}"}',"homeassistant/sensor/ca350_temp_supplytemp/config")
-        publish_message('{"name":"ca350_temp_exhausttemp","avty_t":"comfoair/status","pl_avail":"online","pl_not_avail":"offline","device_class":"temperature","state_topic":"comfoair/exhausttemp","unit_of_measurement":"°C","value_template":"{{ value_json.temperature }}"}',"homeassistant/sensor/ca350_temp_exhausttemp/config")
-        publish_message('{"name":"ca350_temp_returntemp","avty_t":"comfoair/status","pl_avail":"online","pl_not_avail":"offline","device_class":"temperature","state_topic":"comfoair/returntemp","unit_of_measurement":"°C","value_template":"{{ value_json.temperature }}"}',"homeassistant/sensor/ca350_temp_returntemp/config")
+    if HAEnableAutoDiscoverySensors is True : 
+        info_msg('Home Assistant MQTT Autodiscovery Topic Set: homeassistant/sensor/ca350_[nametemp]/config')
+        publish_message('{"name":"ca350_outsidetemp","avty_t":"comfoair/status","pl_avail":"online","pl_not_avail":"offline","device_class":"temperature","state_topic":"comfoair/outsidetemp","unit_of_measurement":"°C"}',"homeassistant/sensor/ca350_outsidetemp/config")
+        publish_message('{"name":"ca350_supplytemp","avty_t":"comfoair/status","pl_avail":"online","pl_not_avail":"offline","device_class":"temperature","state_topic":"comfoair/supplytemp","unit_of_measurement":"°C"}',"homeassistant/sensor/ca350_supplytemp/config")
+        publish_message('{"name":"ca350_exhausttemp","avty_t":"comfoair/status","pl_avail":"online","pl_not_avail":"offline","device_class":"temperature","state_topic":"comfoair/exhausttemp","unit_of_measurement":"°C"}',"homeassistant/sensor/ca350_exhausttemp/config")
+        publish_message('{"name":"ca350_returntemp","avty_t":"comfoair/status","pl_avail":"online","pl_not_avail":"offline","device_class":"temperature","state_topic":"comfoair/returntemp","unit_of_measurement":"°C"}',"homeassistant/sensor/ca350_returntemp/config")
+        publish_message('{"name":"ca350_fan_speed_supply","avty_t":"comfoair/status","pl_avail":"online","pl_not_avail":"offline","state_topic":"comfoair/intakefanspeed"}',"homeassistant/sensor/ca350_fan_speed_supply/config")
+        publish_message('{"name":"ca350_fan_speed_exhaust","avty_t":"comfoair/status","pl_avail":"online","pl_not_avail":"offline","state_topic":"comfoair/exhaustfanspeed"}',"homeassistant/sensor/ca350_fan_speed_exhaust/config")
+        publish_message('{"name":"ca350_return_air_level","avty_t":"comfoair/status","pl_avail":"online","pl_not_avail":"offline","state_topic":"comfoair/intakefanspeed"}',"homeassistant/sensor/ca350_return_air_level/config")
+        publish_message('{"name":"ca350_supply_air_level","avty_t":"comfoair/status","pl_avail":"online","pl_not_avail":"offline","state_topic":"comfoair/exhaustfanspeed"}',"homeassistant/sensor/ca350_supply_air_level/config")
+        publish_message('{"name":"ca350_supply_fan","avty_t":"comfoair/status","pl_avail":"online","pl_not_avail":"offline","state_topic":"comfoair/returntemp"}',"homeassistant/sensor/ca350_supply_fan/config")
+        publish_message('{"name":"ca350_filterstatus","avty_t":"comfoair/status","pl_avail":"online","pl_not_avail":"offline","state_topic":"comfoair/filterstatus_binary"}',"homeassistant/binary_sensor/ca350_filterstatus/config")
+        publish_message('{"name":"ca350_bypass_valve","avty_t":"comfoair/status","pl_avail":"online","pl_not_avail":"offline","state_topic":"comfoair/bypassstatus"}',"homeassistant/binary_sensor/ca350_bypass_valve/config")
+        publish_message('{"name":"ca350_summer_mode","avty_t":"comfoair/status","pl_avail":"online","pl_not_avail":"offline","state_topic":"comfoair/bypassstatus"}',"homeassistant/binary_sensor/ca350_summer_mode/config")
     else:
-        delete_message("homeassistant/sensor/ca350_temp_outsidetemp/config")
-        delete_message("homeassistant/sensor/ca350_temp_supplytemp/config")
-        delete_message("homeassistant/sensor/ca350_temp_exhausttemp/config")
-        delete_message("homeassistant/sensor/ca350_temp_returntemp/config")
+        delete_message("homeassistant/sensor/ca350_outsidetemp/config")
+        delete_message("homeassistant/sensor/ca350_supplytemp/config")
+        delete_message("homeassistant/sensor/ca350_exhausttemp/config")
+        delete_message("homeassistant/sensor/ca350_returntemp/config")
+        delete_message("homeassistant/sensor/ca350_fan_speed_supply/config")
+        delete_message("homeassistant/sensor/ca350_fan_speed_exhaust/config")
+        delete_message("homeassistant/sensor/ca350_return_air_level/config")
+        delete_message("homeassistant/sensor/ca350_supply_air_level/config")
+        delete_message("homeassistant/sensor/ca350_supply_fan/config")
+        delete_message("homeassistant/sensor/ca350_filterstatus/config")
+        delete_message("homeassistant/sensor/ca350_bypass_valve/config")
+        delete_message("homeassistant/sensor/ca350_summer_mode/config")
     #ToDo: Work in progress    
     if HAEnableAutoDiscoveryClimate is True : 
         info_msg('Home Assistant MQTT Autodiscovery Topic Set: homeassistant/climate/ca350_climate/config')
-        publish_message('{"name":"ca350_climate","avty_t":"comfoair/status","pl_avail":"online","pl_not_avail":"offline","temp_cmd_t":"comfoair/comforttemp/set","temp_stat_t":"comfoair/comforttemp","curr_temp_t":"comfoair/returntemp","min_temp":"15","max_temp":"27","temp_step":"1","modes":["off", "fan_only"]}',"homeassistant/climate/ca350_climate/config")
+        publish_message('{"name":"ca350_climate","avty_t":"comfoair/status","pl_avail":"online","pl_not_avail":"offline","temp_cmd_t":"comfoair/comforttemp/set","temp_stat_t":"comfoair/comforttemp","curr_temp_t":"comfoair/returntemp","min_temp":"15","max_temp":"27","temp_step":"1","modes":["off", "fan_only"],"mode_state_topic":"comfoair/ha_climate_mode","mode_command_topic":"comfoair/ha_climate_mode/set","temperature_unit":"C","fan_modes":["auto", "low", "medium", "high"]}',"homeassistant/climate/ca350_climate/config")
     else:
         delete_message("homeassistant/climate/ca350_climate/config")
     topic_subscribe()
