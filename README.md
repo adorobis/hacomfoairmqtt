@@ -91,7 +91,7 @@ climate.ca350_fan | Expose Temperature Control & Fan Control
 ## HA Lovelace Widget:
 An read only Lovelace Widget - depending on the MQTT AD enities: https://github.com/TimWeyand/lovelace-comfoair
 
-##TODO:##
+## TODO:
 - [ ] Create installation script for automatic installation of the script
 - [ ] venv
 - [ ] dependencies and the service. 
