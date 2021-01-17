@@ -420,10 +420,14 @@ def get_fan_status():
     else:
         if ( data[0] == '07' and data[1] == 'f3' ):
             if len(data) > 8:
-                IntakeFanSpeed = int(data[7], 16)
+                IntakeFanSpeed  = int(data[7], 16)
                 ExhaustFanSpeed = int(data[8], 16)  
+                IntakeFanRPM    = int(data[9]+''+data[10], 16)
+                ExhaustFanRPM   = int(data[11]+''+data[12], 16)
                 publish_message(msg=str(IntakeFanSpeed), mqtt_path='comfoair/intakefanspeed')
                 publish_message(msg=str(ExhaustFanSpeed), mqtt_path='comfoair/exhaustfanspeed')
+                publish_message(msg=str(IntakeFanRPM), mqtt_path='comfoair/intakefanrpm')
+                publish_message(msg=str(ExhaustFanRPM), mqtt_path='comfoair/exhaustfanrpm')
             else:
                 warning_msg('function get_fan_status data array too short')
         else:
@@ -529,8 +533,8 @@ def on_connect(client, userdata, flags, rc):
         publish_message('{"name":"ca350_returntemp","avty_t":"comfoair/status","pl_avail":"online","pl_not_avail":"offline","device_class":"temperature","state_topic":"comfoair/returntemp","unit_of_measurement":"°C"}',"homeassistant/sensor/ca350_returntemp/config")
         publish_message('{"name":"ca350_fan_speed_supply","avty_t":"comfoair/status","pl_avail":"online","pl_not_avail":"offline","state_topic":"comfoair/intakefanspeed"}',"homeassistant/sensor/ca350_fan_speed_supply/config")
         publish_message('{"name":"ca350_fan_speed_exhaust","avty_t":"comfoair/status","pl_avail":"online","pl_not_avail":"offline","state_topic":"comfoair/exhaustfanspeed"}',"homeassistant/sensor/ca350_fan_speed_exhaust/config")
-        publish_message('{"name":"ca350_return_air_level","avty_t":"comfoair/status","pl_avail":"online","pl_not_avail":"offline","state_topic":"comfoair/intakefanspeed"}',"homeassistant/sensor/ca350_return_air_level/config")
-        publish_message('{"name":"ca350_supply_air_level","avty_t":"comfoair/status","pl_avail":"online","pl_not_avail":"offline","state_topic":"comfoair/exhaustfanspeed"}',"homeassistant/sensor/ca350_supply_air_level/config")
+        publish_message('{"name":"ca350_return_air_level","avty_t":"comfoair/status","pl_avail":"online","pl_not_avail":"offline","state_topic":"comfoair/intakefanrpm"}',"homeassistant/sensor/ca350_return_air_level/config")
+        publish_message('{"name":"ca350_supply_air_level","avty_t":"comfoair/status","pl_avail":"online","pl_not_avail":"offline","state_topic":"comfoair/exhaustfanrpm"}',"homeassistant/sensor/ca350_supply_air_level/config")
         publish_message('{"name":"ca350_supply_fan","avty_t":"comfoair/status","pl_avail":"online","pl_not_avail":"offline","state_topic":"comfoair/state"}',"homeassistant/sensor/ca350_supply_fan/config")
         publish_message('{"name":"ca350_filterstatus","avty_t":"comfoair/status","pl_avail":"online","pl_not_avail":"offline","state_topic":"comfoair/filterstatus_binary"}',"homeassistant/binary_sensor/ca350_filterstatus/config")
         publish_message('{"name":"ca350_bypass_valve","avty_t":"comfoair/status","pl_avail":"online","pl_not_avail":"offline","state_topic":"comfoair/bypassstatus"}',"homeassistant/binary_sensor/ca350_bypass_valve/config")
