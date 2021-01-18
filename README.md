@@ -99,6 +99,6 @@ An read only Lovelace Widget - depending on the MQTT AD enities: https://github.
 - [ ] Correct implementation of climate
 - [ ] Full Control in Home Assistant with a single Widget (Fan Speed, Temperature)
 - [ ] React on input immediatly - Still Read on Interval Status
-
+- [ ] Implement set_fan_levels() based on values from MQTT (e.g. input_numbers in HA) to set the fan levels for all modes. Also enables setting intake or exhaust fans only as in original controller.
 
 Any help welcome!
