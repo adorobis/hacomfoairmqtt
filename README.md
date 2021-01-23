@@ -6,6 +6,8 @@ This work is based on scripts created for Domoticz integration https://github.co
 
 `src/ca350` - python script to communicate with the CA350 unit via serial port, publish data on MQTT broker and react to control messages
 
+`src/config.ini.dist` - sample configuration file. Needs to be renamed to config.ini and customized
+
 `rc.d/ca350` - rc.d script to set up the service in FreeNAS jail virtual python environment
 
 `servicetest.sh` - simple script to test ca350 service status
@@ -21,7 +23,7 @@ Daemon config file:
 1. The following packages are needed:
 `sudo pkg install python3-pip python3-yaml`
 2. Create directory for the application `/usr/local/share/ca350/bin/` and copy `src/ca350` script to it
-3. Update the script as required (serial port and MQTT server mainly)
+3. Copy the src/config.ini.dist to /usr/local/share/ca350/bin/config.ini and update as required (serial port and MQTT server mainly)
 4. Create virtual environment: 
 `python3 -m venv /usr/local/share/ca350/bin/`
 5. install packages in the venv:
