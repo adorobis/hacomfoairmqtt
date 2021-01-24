@@ -19,27 +19,35 @@ sudo pip3 install paho-mqtt
 start script with python3.7 ca350
 """
 
-# Service Configuration
-SerialPort='/dev/cuau3'               # Serial port CA350 RS232 direct or via USB TTL adapter
-MQTTServer='10.144.1.103'             # MQTT broker - IP
-MQTTPort=1883                         # MQTT broker - Port
-MQTTKeepalive=45                      # MQTT broker - keepalive
-MQTTUser = False                      # MQTT broker - user - default: 0 (disabled/no authentication)
-MQTTPassword = False                  # MQTT broker - password - default: 0 (disabled/no authentication)
-HAEnableAutoDiscoveryFan = True       # Home Assistant send auto discovery for fan
-HAEnableAutoDiscoverySensors = True   # Home Assistant send auto discovery for temperatures
-
-#Todo: HA AD Climate is work in progress
-HAEnableAutoDiscoveryClimate = False  # Work in Progress: Home Assistant send auto discovery for climate
-refresh_interval=10                   # Interval in seconds at which data from RS232 will be polled
-enablePcMode = False                  # automaticly enable PC Mode (disable comfosense)
-debug = False
-
 import paho.mqtt.client as mqtt
 import time
 import serial
 import json
 import sys
+import configparser
+import os
+
+# Read configuration from ini file
+config = configparser.ConfigParser()
+config.read(os.path.dirname(os.path.abspath(__file__)) + '/config.ini')
+
+# Service Configuration
+SerialPort = config['DEFAULT']['SerialPort']                   # Serial port CA350 RS232 direct or via USB TTL adapter
+refresh_interval = int(config['DEFAULT']['refresh_interval'])  # Interval in seconds at which data from RS232 will be polled
+enablePcMode = config['DEFAULT']['enablePcMode'] == 'True'     # automatically enable PC Mode (disable comfosense)
+debug = config['DEFAULT']['debug'] == 'True'
+
+MQTTServer = config['MQTT']['MQTTServer']            # MQTT broker - IP
+MQTTPort = int(config['MQTT']['MQTTPort'])           # MQTT broker - Port
+MQTTKeepalive = int(config['MQTT']['MQTTKeepalive']) # MQTT broker - keepalive
+MQTTUser = config['MQTT']['MQTTUser']                # MQTT broker - user - default: 0 (disabled/no authentication)
+MQTTPassword = config['MQTT']['MQTTPassword']        # MQTT broker - password - default: 0 (disabled/no authentication)
+
+HAEnableAutoDiscoveryFan = config['HA']['HAEnableAutoDiscoveryFan'] == 'True'         # Home Assistant send auto discovery for fan
+HAEnableAutoDiscoverySensors = config['HA']['HAEnableAutoDiscoverySensors'] == 'True' # Home Assistant send auto discovery for temperatures
+#Todo: HA AD Climate is work in progress
+HAEnableAutoDiscoveryClimate = config['HA']['HAEnableAutoDiscoveryClimate'] == 'True' # Work in Progress: Home Assistant send auto discovery for climate
+
 
 print("*****************************")
 print("* CA350 MQTT Home Assistant *")
