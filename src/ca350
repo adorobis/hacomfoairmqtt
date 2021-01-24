@@ -79,6 +79,46 @@ def debug_data(serial_data):
     print('Checksum      : {0}'.format(serial_data[-2]))
     print('End           : {0} {1}'.format(serial_data[-1], serial_data[-0]))
 
+# Get the checksum from the serial data (third to last byte)
+def get_returned_checksum(serial_data):
+    return serial_data[-3:-2]
+
+# Calculate the checksum for a given byte string received from the serial connection.
+# The checksum is calculated by adding all bytes (excluding start and end) plus 173.
+# If the value 0x07 appears twice in the data area, only one 0x07 is used for the checksum calculation.
+# If the checksum is greater than one byte, the least significant byte is used.
+def calculate_checksum(serial_data_slice):
+    checksum = 173
+    seven_encountered = False
+
+    for byte in serial_data_slice:
+        if byte == 0x07:
+            if not seven_encountered:
+                seven_encountered = True  # Mark that we have encountered the first 0x07
+            else:
+                continue  # Skip the seconds 0x07
+
+        checksum += int(byte)
+
+    return checksum.to_bytes(((checksum.bit_length() + 8) // 8), byteorder='big')[-1:]
+
+# Validate the checksum for data returned from the serial connection
+# Currently, the data returned is passed as a string, so we'll need to convert it back to bytes for easier handling.
+def validate_checksum(data):
+    if data[0] != '07' or data[1] != 'f3':  # Incorrect ACK
+        return False
+
+    serial_data = bytes.fromhex(''.join(data))
+
+    serial_data_slice = serial_data[2:-3]
+
+    returned_checksum = get_returned_checksum(serial_data)
+    calculated_checksum = calculate_checksum(serial_data_slice)
+
+    if returned_checksum != calculated_checksum:
+        return False
+
+    return True
 
 def on_message(client, userdata, message):
     #print("message check")
@@ -193,7 +233,7 @@ def set_ventilation_level(nr):
         data = serial_command(b'\x07\xF0\x00\x99\x01\x04\x4B\x07\x0F')        
 
     if data:
-        if ( data[0] == '07' and data[1] == 'f3' ):
+        if ( validate_checksum(data) ):
             info_msg('Changed the ventilation to {0}'.format(nr))
             get_ventilation_status()
             get_fan_status()
@@ -215,7 +255,7 @@ def set_fan_levels():
     data = serial_command(b'\x07\xF0\x00\xCF\x09\x0E\x14\x28\x0E\x14\x28\x46\x46\x00\x9D\x07\x0F')
 
     if data:
-        if ( data[0] == '07' and data[1] == 'f3' ):
+        if ( validate_checksum(data) ):
             info_msg('Changed the fan levels')
             get_ventilation_levels()
             get_ventilation_status()
@@ -248,7 +288,7 @@ def set_pc_mode(nr):
         warning_msg('Wrong parameter: {0}'.format(nr))    
     print(data)
     if data:
-        if ( data[0] == '07' and data[1] == 'f3' ):
+        if ( validate_checksum(data) ):
             print(data)
             info_msg('Changed RS232 mode to {0}'.format(nr))
         else:
@@ -287,7 +327,7 @@ def set_comfort_temperature(nr):
     else:
         warning_msg('Wrong temperature provided: {0}. No changes made.'.format(nr))
     if data:
-        if ( data[0] == '07' and data[1] == 'f3' ):
+        if ( validate_checksum(data) ):
             info_msg('Changed comfort temperature to {0}'.format(nr))
             get_temp()
             get_bypass_status()
@@ -311,9 +351,9 @@ def get_temp():
     if data == None:
         warning_msg('get_temp function could not get serial data')
     else:
-        if ( data[0] == '07' and data[1] == 'f3' ):
+        if ( validate_checksum(data) ):
             if len(data) > 11:
-                ComfortTemp = int(data[7], 16) / 2 - 20
+                ComfortTemp = int(data[7], 16) / 2.0 - 20
                 OutsideAirTemp = int(data[8], 16) / 2.0 - 20
                 SupplyAirTemp = int(data[9], 16) / 2.0 - 20
                 ReturnAirTemp = int(data[10], 16) / 2.0 - 20
@@ -344,7 +384,7 @@ def get_ventilation_levels():
     if data == None:
         warning_msg('get_ventilation_levels function could not get serial data')
     else:
-        if ( data[0] == '07' and data[1] == 'f3' ):
+        if ( validate_checksum(data) ):
             if len(data) > 18:
                 OutAbsent = int(data[7], 16)
                 OutLow = int(data[8], 16)
@@ -374,7 +414,7 @@ def get_ventilation_status():
     if data == None:
         warning_msg('get_ventilation_status function could not get serial data')
     else:
-        if ( data[0] == '07' and data[1] == 'f3' ):
+        if ( validate_checksum(data) ):
             if len(data) > 16:
                 ReturnAirLevel = int(data[13], 16)
                 SupplyAirLevel = int(data[14], 16)
@@ -426,7 +466,7 @@ def get_fan_status():
     if data == None:
         warning_msg('function get_fan_status could not get serial data')
     else:
-        if ( data[0] == '07' and data[1] == 'f3' ):
+        if ( validate_checksum(data) ):
             if len(data) > 8:
                 IntakeFanSpeed  = int(data[7], 16)
                 ExhaustFanSpeed = int(data[8], 16)  
@@ -452,7 +492,7 @@ def get_bypass_status():
     if data == None:
         warning_msg('function get_bypass_status could not get serial data')
     else:
-        if ( data[0] == '07' and data[1] == 'f3' ):
+        if ( validate_checksum(data) ):
             if len(data) > 13:
                 BypassStatus = int(data[10], 16)
                 SummerMode = int(data[13],16)
@@ -480,7 +520,7 @@ def get_filter_status():
         warning_msg('get_filter_status function could not get serial data')
 
     else:
-        if ( data[0] == '07' and data[1] == 'f3' ):
+        if ( validate_checksum(data) ):
             if len(data) > 18:
                 if int(data[18], 16) == 0:
                     FilterStatus = 'Ok'
