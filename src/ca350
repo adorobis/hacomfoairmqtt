@@ -106,16 +106,21 @@ def calculate_checksum(serial_data_slice):
 # Currently, the data returned is passed as a string, so we'll need to convert it back to bytes for easier handling.
 def validate_checksum(data):
     if data[0] != '07' or data[1] != 'f3':  # Incorrect ACK
+        warning_msg('Incorrect ACK')
+        return False
+    if data[2] != '07' or data[3] != 'f0':  # Incorrect Header
+        warning_msg('Incorrect header')
         return False
 
     serial_data = bytes.fromhex(''.join(data))
 
-    serial_data_slice = serial_data[2:-3]
+    serial_data_slice = serial_data[4:-3]
 
     returned_checksum = get_returned_checksum(serial_data)
     calculated_checksum = calculate_checksum(serial_data_slice)
 
     if returned_checksum != calculated_checksum:
+        warning_msg('Incorrect checksum')
         return False
 
     return True
@@ -373,7 +378,7 @@ def get_temp():
             else:
                 warning_msg('get_temp function data array too short')
         else:
-            warning_msg('get_temp function wrong ACK message')
+            warning_msg('get_temp function: incorrect data received')
 def get_ventilation_levels():
     # 0x07 0xF0 0x00 0xD1 0x00 0x7A 0x07 0x0F 
     # Checksum: 0x7A(0x00 0xCD) = 0 + 205 + 0 + 173 = 378
@@ -406,7 +411,7 @@ def get_ventilation_levels():
             else:
                 warning_msg('get_ventilation_levels function data array too short')
         else:
-            warning_msg('get_ventilation_levels function wrong ACK message')
+            warning_msg('get_ventilation_levels function: incorrect data received')
 
 def get_ventilation_status():
     data = serial_command(b'\x07\xF0\x00\xCD\x00\x7A\x07\x0F')
@@ -452,7 +457,7 @@ def get_ventilation_status():
                 time.sleep(2)
                 get_ventilation_status()
         else:
-            warning_msg('get_ventilation_status function wrong ACK message')
+            warning_msg('get_ventilation_status function: incorrect data received')
             
 #        info_msg('ReturnAirLevel: {}, SupplyAirLevel: {}, FanLevel: {}, IntakeFanActive: {}'.format(ReturnAirLevel, SupplyAirLevel, FanLevel, StrIntakeFanActive))
 
@@ -479,7 +484,7 @@ def get_fan_status():
             else:
                 warning_msg('function get_fan_status data array too short')
         else:
-            warning_msg('function get_fan_status wrong ACK message')
+            warning_msg('function get_fan_status: incorrect data received')
 #        debug_msg('IntakeFanSpeed {0}%, ExhaustFanSpeed {1}%, IntakeAirRPM {2}, ExhaustAirRPM {3}'.format(IntakeFanSpeed,ExhaustFanSpeed,IntakeFanRPM,ExhaustFanRPM))
 
 def get_bypass_status():
@@ -504,7 +509,7 @@ def get_bypass_status():
             else:
                 warning_msg('function get_bypass_status data array too short')
         else:
-            warning_msg('function get_bypass_status wrong ACK message')
+            warning_msg('function get_bypass_status: incorrect data received')
 
 def get_filter_status():
     # 0x07 0xF0 0x00 0xD9 0x00 0x86 0x07 0x0F 
@@ -537,7 +542,7 @@ def get_filter_status():
             else:
                 warning_msg('get_filter_status data array too short')
         else:
-            warning_msg('get_filter_status wrong ACK message')
+            warning_msg('get_filter_status: incorrect data received')
             
 def recon():
     try:
