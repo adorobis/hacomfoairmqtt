@@ -23,7 +23,7 @@ Daemon config file:
 2. Create directory for the application `/usr/local/share/ca350/bin/` and copy `src/ca350` script to it
 3. Update the script as required (serial port and MQTT server mainly)
 4. Create virtual environment: 
-`python3 -m venv /usr/local/share/ca350/bin/`
+`python3 -m venv /usr/local/share/ca350/`
 5. install packages in the venv:
 ```
 source /usr/local/share/ca350/bin/activate.csh
