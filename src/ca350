@@ -108,8 +108,11 @@ def validate_checksum(data):
     if data[0] != '07' or data[1] != 'f3':  # Incorrect ACK
         warning_msg('Incorrect ACK')
         return False
-    if data[2] != '07' or data[3] != 'f0':  # Incorrect Header
-        warning_msg('Incorrect header')
+    if data[2] != '07' or data[3] != 'f0':  # Incorrect start
+        warning_msg('Incorrect start')
+        return False
+    if data[-2] != '07' or data[-1] != '0f':  # Incorrect end
+        warning_msg('Incorrect end')
         return False
 
     serial_data = bytes.fromhex(''.join(data))
