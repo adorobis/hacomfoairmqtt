@@ -305,8 +305,8 @@ def set_ventilation_level(nr):
         set_ventilation_level(nr)
         get_ventilation_status()
         get_fan_status()
-def set_fan_levels():
 
+def set_fan_levels():
     data = send_command(b'\x00\xCF', b'\x00') 
 
     if data:
@@ -367,11 +367,7 @@ def set_comfort_temperature(nr):
         set_comfort_temperature(nr)
         
 def get_temp():
-    # 0x07 0xF0 0x00 0xD1 0x00 0x7E 0x07 0x0F 
-    # Checksum: 0x7E(0x00 0xD1) = 0 + 209 + 0 + 173 = 382
-    # End: 0x07 0x0F
-
-    data = send_command(b'\x00\xD1', None) 
+    data = send_command(b'\x00\xD1', None)
     
     if data == None:
         warning_msg('get_temp function could not get serial data')
@@ -399,11 +395,8 @@ def get_temp():
                 warning_msg('get_temp function data array too short')
         else:
             warning_msg('get_temp function: incorrect data received')
-def get_ventilation_levels():
-    # 0x07 0xF0 0x00 0xCD 0x00 0x7A 0x07 0x0F
-    # Checksum: 0x7A(0x00 0xCD) = 0 + 205 + 0 + 173 = 378
-    # End: 0x07 0x0F
 
+def get_ventilation_levels():
     data = send_command(b'\x00\xCD', None)
 
     if data == None:
@@ -474,11 +467,7 @@ def get_ventilation_status():
         info_msg('ReturnAirLevel: {}, SupplyAirLevel: {}, FanLevel: {}, IntakeFanActive: {}'.format(ReturnAirLevel, SupplyAirLevel, FanLevel, StrIntakeFanActive))
 
 def get_fan_status():
-    # 0x07 0xF0 0x00 0x0B 0x00 0xB8 0x07 0x0F 
-    # Checksum: 0xB8 (0x00 0x0B) = 0 + 11 + 0 + 173 = 184
-    # End: 0x07 0x0F
-
-    data = send_command(b'\x00\x0B', None) 
+    data = send_command(b'\x00\x0B', None)
 
     if data == None:
         warning_msg('function get_fan_status could not get serial data')
@@ -500,11 +489,7 @@ def get_fan_status():
 #        debug_msg('IntakeFanSpeed {0}%, ExhaustFanSpeed {1}%, IntakeAirRPM {2}, ExhaustAirRPM {3}'.format(IntakeFanSpeed,ExhaustFanSpeed,IntakeFanRPM,ExhaustFanRPM))
 
 def get_bypass_status():
-    # 0x07 0xF0 0x00 0x0B 0x00 0xB8 0x07 0x0F 
-    # Checksum: 0xB8 (0x00 0x0B) = 0 + 11 + 0 + 173 = 184
-    # End: 0x07 0x0F
-
-    data = send_command(b'\x00\xDF', None) 
+    data = send_command(b'\x00\xDF', None)
 
     if data == None:
         warning_msg('function get_bypass_status could not get serial data')
@@ -524,14 +509,7 @@ def get_bypass_status():
             warning_msg('function get_bypass_status: incorrect data received')
 
 def get_filter_status():
-    # 0x07 0xF0 0x00 0xD9 0x00 0x86 0x07 0x0F 
-    # Start: 0x07 0xF0
-    # Command: 0x00 0xD9
-    # Number data bytes: 0x00
-    # Checksum: 0x86 (0x00 0xD9) = 0 + 217 + 0 + 173 = 390
-    # End: 0x07 0x0F
-
-    data = send_command(b'\x00\xD9', None) 
+    data = send_command(b'\x00\xD9', None)
 
     if data == None:
         warning_msg('get_filter_status function could not get serial data')
