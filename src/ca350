@@ -285,16 +285,8 @@ def split_result(data):
     return split_data
 
 def set_ventilation_level(nr):
-    if nr == 0:
-        data = send_command(b'\x00\x99', b'\x00') 
-    elif nr == 1:
-        data = send_command(b'\x00\x99', b'\x01') 
-    elif nr == 2:
-        data = send_command(b'\x00\x99', b'\x02') 
-    elif nr == 3:
-        data = send_command(b'\x00\x99', b'\x03') 
-    elif nr == 4:
-        data = send_command(b'\x00\x99', b'\x04')         
+    if nr >= 0 and nr <= 4:
+        data = send_command(b'\x00\x99', bytes([nr]))
 
     if data:
         if ( validate_checksum(data) ):
@@ -339,14 +331,8 @@ def set_fan_levels():
         get_fan_status()
 
 def set_pc_mode(nr):
-    if nr == 3:
-        data = send_command(b'\x00\x9B', b'\x03') 
-    elif nr == 0:
-        data = send_command(b'\x00\x9B', b'\x00') 
-    elif nr == 1:
-        data = send_command(b'\x00\x9B', b'\x01') 
-    elif nr == 4:
-        data = send_command(b'\x00\x9B', b'\x04') 
+    if nr >= 0 and nr <= 4 and nr != 2:
+        data = send_command(b'\x00\x9B', bytes([nr]))
     else:
         warning_msg('Wrong parameter: {0}'.format(nr))    
     print(data)
@@ -361,32 +347,8 @@ def set_pc_mode(nr):
         warning_msg('Changing the RS232 mode went wrong')
 
 def set_comfort_temperature(nr):
-    if nr == 15:
-        data = send_command(b'\x00\xD3', b'\x46') 
-    elif nr == 16:
-        data = send_command(b'\x00\xD3', b'\x48') 
-    elif nr == 17:
-        data = send_command(b'\x00\xD3', b'\x4A') 
-    elif nr == 18:
-        data = send_command(b'\x00\xD3', b'\x4C') 
-    elif nr == 19:
-        data = send_command(b'\x00\xD3', b'\x4E') 
-    elif nr == 20:
-        data = send_command(b'\x00\xD3', b'\x50') 
-    elif nr == 21:
-        data = send_command(b'\x00\xD3', b'\x52') 
-    elif nr == 22:
-        data = send_command(b'\x00\xD3', b'\x54') 
-    elif nr == 23:
-        data = send_command(b'\x00\xD3', b'\x56') 
-    elif nr == 24:
-        data = send_command(b'\x00\xD3', b'\x58') 
-    elif nr == 25:
-        data = send_command(b'\x00\xD3', b'\x5A')         
-    elif nr == 26:
-        data = send_command(b'\x00\xD3', b'\x5C') 
-    elif nr == 27:
-        data = send_command(b'\x00\xD3', b'\x5E') 
+    if nr >= 15 and nr <= 27:
+        data = send_command(b'\x00\xD3', bytes([nr * 2 + 40]))
     else:
         warning_msg('Wrong temperature provided: {0}. No changes made.'.format(nr))
     if data:
