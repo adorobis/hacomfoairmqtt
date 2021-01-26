@@ -96,6 +96,7 @@ def calculate_checksum(serial_data_slice):
             if not seven_encountered:
                 seven_encountered = True  # Mark that we have encountered the first 0x07
             else:
+                seven_encountered = False # Next one will be counted again
                 continue  # Skip the seconds 0x07
 
         checksum += int(byte)
@@ -105,26 +106,47 @@ def calculate_checksum(serial_data_slice):
 # Validate the checksum for data returned from the serial connection
 # Currently, the data returned is passed as a string, so we'll need to convert it back to bytes for easier handling.
 def validate_checksum(data):
-    if data[0] != '07' or data[1] != 'f3':  # Incorrect ACK
-        warning_msg('Incorrect ACK')
+    split_data = split_result(data)
+    if split_data[0][0] != '07' or split_data[0][1] != 'f3':  # Response does not start with ACK
+        warning_msg('Response does not start with ACK')
         return False
-    if data[2] != '07' or data[3] != 'f0':  # Incorrect start
+    if split_data[1][0] != '07' or split_data[1][1] != 'f0':  # Incorrect start
         warning_msg('Incorrect start')
         return False
-    if data[-2] != '07' or data[-1] != '0f':  # Incorrect end
+    if split_data[-1][-2] != '07' or split_data[-1][-1] != '0f':  # Incorrect end
         warning_msg('Incorrect end')
         return False
 
-    serial_data = bytes.fromhex(''.join(data))
+    for line in split_data:
+        ## TODO: count only first 7
+        # line_length = len(line) - 7  # (subtract ACK (2) + start (2) + checksum (1) + end(2))
+        # print(line_length)
+        # print(hex(line_length))
+        # print(line[6])
+        # if line[6] != hex(line_length):  # Incorrect length
+        #     warning_msg('Incorrect length')
+        #     return False
 
-    serial_data_slice = serial_data[4:-3]
+        if len(line) == 2 and line[0] == '07' or line[1] == 'f3':
+            # Ignore ACK (for now)
+            print('ACK')
+        else:
+            print(line)
+            serial_line = bytes.fromhex(''.join(line))
 
-    returned_checksum = get_returned_checksum(serial_data)
-    calculated_checksum = calculate_checksum(serial_data_slice)
+            serial_line_slice = serial_line[2:-3]
 
-    if returned_checksum != calculated_checksum:
-        warning_msg('Incorrect checksum')
-        return False
+            # print(line)
+            # print(serial_line_slice.hex())
+
+            returned_checksum = get_returned_checksum(serial_line)
+            calculated_checksum = calculate_checksum(serial_line_slice)
+            # print(returned_checksum.hex())
+            # print(calculated_checksum.hex())
+
+            if returned_checksum != calculated_checksum:
+                warning_msg('Incorrect checksum')
+                return False
 
     return True
 
@@ -227,6 +249,21 @@ def serial_command(cmd):
         warning_msg('Serial command write and read exception:')
         warning_msg(sys.exc_info())
         return None
+
+# Split the data at \x07\f0 (start) or \x07\xf3 (ACK)
+def split_result(data):
+    split_data = []
+    line = []
+
+    for index, byte in enumerate(data):
+        if index > 0 and len(data) > index+2 and (data[index] == '07' and data[index+1] == 'f0' or data[index] == '07' and data[index+1] == 'f3'):
+            split_data.append(line)
+            line = []
+        line.append(byte)
+
+    split_data.append(line)
+    # print(split_data)
+    return split_data
 
 def set_ventilation_level(nr):
     if nr == 0:
