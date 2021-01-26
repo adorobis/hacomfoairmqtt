@@ -250,6 +250,25 @@ def serial_command(cmd):
         warning_msg(sys.exc_info())
         return None
 
+# Write serial data for the given command and data.
+# Start and end, as well as the checksum are added automatically.
+def send_command(command, data):
+    start = b'\x07\xF0'
+    end = b'\x07\x0F'
+    if data is None:
+        length = b'\x00'
+        command_plus_data = command + length
+    else:
+        length_int = len(data)
+        length = length_int.to_bytes(((length_int.bit_length() + 8) // 8), byteorder='big')[-1:]
+        command_plus_data = command + length + data
+
+    checksum = calculate_checksum(command_plus_data)
+
+    cmd = start + command_plus_data + checksum + end
+
+    return serial_command(cmd)
+
 # Split the data at \x07\f0 (start) or \x07\xf3 (ACK)
 def split_result(data):
     split_data = []
@@ -267,15 +286,15 @@ def split_result(data):
 
 def set_ventilation_level(nr):
     if nr == 0:
-        data = serial_command(b'\x07\xF0\x00\x99\x01\x00\x47\x07\x0F')
+        data = send_command(b'\x00\x99', b'\x00') 
     elif nr == 1:
-        data = serial_command(b'\x07\xF0\x00\x99\x01\x01\x48\x07\x0F')
+        data = send_command(b'\x00\x99', b'\x01') 
     elif nr == 2:
-        data = serial_command(b'\x07\xF0\x00\x99\x01\x02\x49\x07\x0F')
+        data = send_command(b'\x00\x99', b'\x02') 
     elif nr == 3:
-        data = serial_command(b'\x07\xF0\x00\x99\x01\x03\x4A\x07\x0F')
+        data = send_command(b'\x00\x99', b'\x03') 
     elif nr == 4:
-        data = serial_command(b'\x07\xF0\x00\x99\x01\x04\x4B\x07\x0F')        
+        data = send_command(b'\x00\x99', b'\x04')         
 
     if data:
         if ( validate_checksum(data) ):
@@ -296,8 +315,7 @@ def set_ventilation_level(nr):
         get_fan_status()
 def set_fan_levels():
 
-#    data = serial_command(b'\x07\xF0\x00\xCF\x09\x0F\x19\x28\x0F\x19\x28\x46\x46\x00\xB0\x07\x0F')
-    data = serial_command(b'\x07\xF0\x00\xCF\x09\x0E\x14\x28\x0E\x14\x28\x46\x46\x00\x9D\x07\x0F')
+    data = send_command(b'\x00\xCF', b'\x00') 
 
     if data:
         if ( validate_checksum(data) ):
@@ -322,13 +340,13 @@ def set_fan_levels():
 
 def set_pc_mode(nr):
     if nr == 3:
-        data = serial_command(b'\x07\xF0\x00\x9B\x01\x03\x4C\x07\x0F')
+        data = send_command(b'\x00\x9B', b'\x03') 
     elif nr == 0:
-        data = serial_command(b'\x07\xF0\x00\x9B\x01\x00\x49\x07\x0F')
+        data = send_command(b'\x00\x9B', b'\x00') 
     elif nr == 1:
-        data = serial_command(b'\x07\xF0\x00\x9B\x01\x01\x4A\x07\x0F')
+        data = send_command(b'\x00\x9B', b'\x01') 
     elif nr == 4:
-        data = serial_command(b'\x07\xF0\x00\x9B\x01\x04\x4D\x07\x0F')
+        data = send_command(b'\x00\x9B', b'\x04') 
     else:
         warning_msg('Wrong parameter: {0}'.format(nr))    
     print(data)
@@ -344,31 +362,31 @@ def set_pc_mode(nr):
 
 def set_comfort_temperature(nr):
     if nr == 15:
-        data = serial_command(b'\x07\xF0\x00\xD3\x01\x46\xC7\x07\x0F')
+        data = send_command(b'\x00\xD3', b'\x46') 
     elif nr == 16:
-        data = serial_command(b'\x07\xF0\x00\xD3\x01\x48\xC9\x07\x0F')
+        data = send_command(b'\x00\xD3', b'\x48') 
     elif nr == 17:
-        data = serial_command(b'\x07\xF0\x00\xD3\x01\x4A\xCB\x07\x0F')
+        data = send_command(b'\x00\xD3', b'\x4A') 
     elif nr == 18:
-        data = serial_command(b'\x07\xF0\x00\xD3\x01\x4C\xCD\x07\x0F')
+        data = send_command(b'\x00\xD3', b'\x4C') 
     elif nr == 19:
-        data = serial_command(b'\x07\xF0\x00\xD3\x01\x4E\xCF\x07\x0F')
+        data = send_command(b'\x00\xD3', b'\x4E') 
     elif nr == 20:
-        data = serial_command(b'\x07\xF0\x00\xD3\x01\x50\xD1\x07\x0F')
+        data = send_command(b'\x00\xD3', b'\x50') 
     elif nr == 21:
-        data = serial_command(b'\x07\xF0\x00\xD3\x01\x52\xD3\x07\x0F')
+        data = send_command(b'\x00\xD3', b'\x52') 
     elif nr == 22:
-        data = serial_command(b'\x07\xF0\x00\xD3\x01\x54\xD5\x07\x0F')
+        data = send_command(b'\x00\xD3', b'\x54') 
     elif nr == 23:
-        data = serial_command(b'\x07\xF0\x00\xD3\x01\x56\xD7\x07\x0F')
+        data = send_command(b'\x00\xD3', b'\x56') 
     elif nr == 24:
-        data = serial_command(b'\x07\xF0\x00\xD3\x01\x58\xD9\x07\x0F')
+        data = send_command(b'\x00\xD3', b'\x58') 
     elif nr == 25:
-        data = serial_command(b'\x07\xF0\x00\xD3\x01\x5A\xDB\x07\x0F')        
+        data = send_command(b'\x00\xD3', b'\x5A')         
     elif nr == 26:
-        data = serial_command(b'\x07\xF0\x00\xD3\x01\x5C\xDD\x07\x0F')
+        data = send_command(b'\x00\xD3', b'\x5C') 
     elif nr == 27:
-        data = serial_command(b'\x07\xF0\x00\xD3\x01\x5E\xDF\x07\x0F')
+        data = send_command(b'\x00\xD3', b'\x5E') 
     else:
         warning_msg('Wrong temperature provided: {0}. No changes made.'.format(nr))
     if data:
@@ -391,7 +409,7 @@ def get_temp():
     # Checksum: 0x7E(0x00 0xD1) = 0 + 209 + 0 + 173 = 382
     # End: 0x07 0x0F
 
-    data = serial_command(b'\x07\xF0\x00\xD1\x00\x7E\x07\x0F')
+    data = send_command(b'\x00\xD1', None) 
     
     if data == None:
         warning_msg('get_temp function could not get serial data')
@@ -420,12 +438,12 @@ def get_temp():
         else:
             warning_msg('get_temp function: incorrect data received')
 def get_ventilation_levels():
-    # 0x07 0xF0 0x00 0xD1 0x00 0x7A 0x07 0x0F 
+    # 0x07 0xF0 0x00 0xCD 0x00 0x7A 0x07 0x0F
     # Checksum: 0x7A(0x00 0xCD) = 0 + 205 + 0 + 173 = 378
     # End: 0x07 0x0F
 
-    data = serial_command(b'\x07\xF0\x00\xCD\x00\x7A\x07\x0F')
-    
+    data = send_command(b'\x00\xCD', None)
+
     if data == None:
         warning_msg('get_ventilation_levels function could not get serial data')
     else:
@@ -446,7 +464,7 @@ def get_ventilation_levels():
             warning_msg('get_ventilation_levels function: incorrect data received')
 
 def get_ventilation_status():
-    data = serial_command(b'\x07\xF0\x00\xCD\x00\x7A\x07\x0F')
+    data = send_command(b'\x00\xCD', None) 
 
     if data == None:
         warning_msg('get_ventilation_status function could not get serial data')
@@ -498,7 +516,7 @@ def get_fan_status():
     # Checksum: 0xB8 (0x00 0x0B) = 0 + 11 + 0 + 173 = 184
     # End: 0x07 0x0F
 
-    data = serial_command(b'\x07\xF0\x00\x0B\x00\xB8\x07\x0F')
+    data = send_command(b'\x00\x0B', None) 
 
     if data == None:
         warning_msg('function get_fan_status could not get serial data')
@@ -524,7 +542,7 @@ def get_bypass_status():
     # Checksum: 0xB8 (0x00 0x0B) = 0 + 11 + 0 + 173 = 184
     # End: 0x07 0x0F
 
-    data = serial_command(b'\x07\xF0\x00\xDF\x00\x8C\x07\x0F')
+    data = send_command(b'\x00\xDF', None) 
 
     if data == None:
         warning_msg('function get_bypass_status could not get serial data')
@@ -551,7 +569,7 @@ def get_filter_status():
     # Checksum: 0x86 (0x00 0xD9) = 0 + 217 + 0 + 173 = 390
     # End: 0x07 0x0F
 
-    data = serial_command(b'\x07\xF0\x00\xD9\x00\x86\x07\x0F')
+    data = send_command(b'\x00\xD9', None) 
 
     if data == None:
         warning_msg('get_filter_status function could not get serial data')
