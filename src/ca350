@@ -354,7 +354,7 @@ def get_temp():
     if data is None:
         warning_msg('get_temp function could not get serial data')
     else:
-        if len(data) > 11:
+        if len(data) > 4:
             ComfortTemp = data[0] / 2.0 - 20
             OutsideAirTemp = data[1] / 2.0 - 20
             SupplyAirTemp = data[2] / 2.0 - 20
@@ -381,7 +381,7 @@ def get_ventilation_levels():
     if data is None:
         warning_msg('get_ventilation_levels function could not get serial data')
     else:
-        if len(data) > 18:
+        if len(data) > 12:
             OutAbsent = data[0]
             OutLow = data[1]
             OutMid = data[2]
@@ -400,7 +400,7 @@ def get_ventilation_status():
     if data is None:
         warning_msg('get_ventilation_status function could not get serial data')
     else:
-        if len(data) > 16:
+        if len(data) > 9:
             ReturnAirLevel = data[6]
             SupplyAirLevel = data[7]
             FanLevel = data[8]
@@ -443,7 +443,7 @@ def get_fan_status():
     if data is None:
         warning_msg('function get_fan_status could not get serial data')
     else:
-        if len(data) > 8:
+        if len(data) > 5:
             IntakeFanSpeed  = data[0]
             ExhaustFanSpeed = data[1]
             IntakeFanRPM    = int.from_bytes(data[2:4], byteorder='big')
@@ -462,7 +462,7 @@ def get_bypass_status():
     if data is None:
         warning_msg('function get_bypass_status could not get serial data')
     else:
-        if len(data) > 13:
+        if len(data) > 6:
             BypassStatus = data[3]
             SummerMode = data[6]
             publish_message(msg=str(BypassStatus), mqtt_path='comfoair/bypassstatus')
@@ -479,7 +479,7 @@ def get_filter_status():
     if data is None:
         warning_msg('get_filter_status function could not get serial data')
     else:
-        if len(data) > 18:
+        if len(data) > 16:
             if data[11] == 0:
                 FilterStatus = 'Ok'
                 FilterStatusBinary = 1
