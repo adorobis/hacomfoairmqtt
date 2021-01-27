@@ -134,7 +134,7 @@ def filter_and_validate(data, result_command):
                     warning_msg('Incorrect checksum')
                     return None
 
-                return line
+                return line[5:-3]  # Only return data, no start, end, length and checksum
 
     warning_msg('Expected return not found')
     return None
@@ -356,11 +356,11 @@ def get_temp():
         warning_msg('get_temp function could not get serial data')
     else:
         if len(data) > 11:
-            ComfortTemp = data[5] / 2.0 - 20
-            OutsideAirTemp = data[6] / 2.0 - 20
-            SupplyAirTemp = data[7] / 2.0 - 20
-            ReturnAirTemp = data[8] / 2.0 - 20
-            ExhaustAirTemp = data[9] / 2.0 - 20
+            ComfortTemp = data[0] / 2.0 - 20
+            OutsideAirTemp = data[1] / 2.0 - 20
+            SupplyAirTemp = data[2] / 2.0 - 20
+            ReturnAirTemp = data[3] / 2.0 - 20
+            ExhaustAirTemp = data[4] / 2.0 - 20
             if ComfortTemp > 10 and ComfortTemp < 30:
                 publish_message(msg=str(ComfortTemp), mqtt_path='comfoair/comforttemp')
                 publish_message(msg=str(OutsideAirTemp), mqtt_path='comfoair/outsidetemp')
@@ -383,14 +383,14 @@ def get_ventilation_levels():
         warning_msg('get_ventilation_levels function could not get serial data')
     else:
         if len(data) > 18:
-            OutAbsent = data[5]
-            OutLow = data[6]
-            OutMid = data[7]
-            InAbsent = data[8]
-            InLow = data[9]
-            InMid = data[10]
-            OutHigh = data[15]
-            InHigh = data[16]
+            OutAbsent = data[0]
+            OutLow = data[1]
+            OutMid = data[2]
+            InAbsent = data[3]
+            InLow = data[4]
+            InMid = data[5]
+            OutHigh = data[10]
+            InHigh = data[11]
             debug_msg('OutAbsent: {}, OutLow: {}, OutMid: {}, OutHigh: {}, InAbsent: {}, InLow: {}, InMid: {}, InHigh: {}'.format(OutAbsent, OutLow, OutMid, OutHigh, InAbsent, InLow, InMid, InHigh))
         else:
             warning_msg('get_ventilation_levels function data array too short')
@@ -402,10 +402,10 @@ def get_ventilation_status():
         warning_msg('get_ventilation_status function could not get serial data')
     else:
         if len(data) > 16:
-            ReturnAirLevel = data[11]
-            SupplyAirLevel = data[12]
-            FanLevel = data[13]
-            IntakeFanActive = data[14]
+            ReturnAirLevel = data[6]
+            SupplyAirLevel = data[7]
+            FanLevel = data[8]
+            IntakeFanActive = data[9]
 
             if IntakeFanActive == 1:
                 StrIntakeFanActive = 'Yes'
@@ -445,10 +445,10 @@ def get_fan_status():
         warning_msg('function get_fan_status could not get serial data')
     else:
         if len(data) > 8:
-            IntakeFanSpeed  = data[5]
-            ExhaustFanSpeed = data[6]
-            IntakeFanRPM    = int.from_bytes(data[7:9], byteorder='big')
-            ExhaustFanRPM   = int.from_bytes(data[9:11], byteorder='big')
+            IntakeFanSpeed  = data[0]
+            ExhaustFanSpeed = data[1]
+            IntakeFanRPM    = int.from_bytes(data[2:4], byteorder='big')
+            ExhaustFanRPM   = int.from_bytes(data[4:6], byteorder='big')
             publish_message(msg=str(IntakeFanSpeed), mqtt_path='comfoair/intakefanspeed')
             publish_message(msg=str(ExhaustFanSpeed), mqtt_path='comfoair/exhaustfanspeed')
             publish_message(msg=str(IntakeFanRPM), mqtt_path='comfoair/intakefanrpm')
@@ -464,8 +464,8 @@ def get_bypass_status():
         warning_msg('function get_bypass_status could not get serial data')
     else:
         if len(data) > 13:
-            BypassStatus = data[8]
-            SummerMode = data[11]
+            BypassStatus = data[3]
+            SummerMode = data[6]
             publish_message(msg=str(BypassStatus), mqtt_path='comfoair/bypassstatus')
             if SummerMode==1:
                 publish_message(msg='Summer', mqtt_path='comfoair/bypassmode')
@@ -481,10 +481,10 @@ def get_filter_status():
         warning_msg('get_filter_status function could not get serial data')
     else:
         if len(data) > 18:
-            if data[16] == 0:
+            if data[11] == 0:
                 FilterStatus = 'Ok'
                 FilterStatusBinary = 1
-            elif data[16] == 1:
+            elif data[11] == 1:
                 FilterStatus = 'Full'
                 FilterStatusBinary = 0
             else:
