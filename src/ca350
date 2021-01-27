@@ -64,21 +64,6 @@ def warning_msg(message):
 def info_msg(message):
     print('{0} INFO: {1}'.format(time.strftime("%d-%m-%Y %H:%M:%S", time.gmtime()), message))
 
-def debug_data(serial_data):
-    print('Ack           : {0} {1}'.format(serial_data[0], serial_data[1]))
-    print('Start         : {0} {1}'.format(serial_data[2], serial_data[3]))
-    print('Command       : {0} {1}'.format(serial_data[4], serial_data[5]))
-    print('Nr data bytes : {0} (integer {1})'.format(serial_data[6], int(serial_data[6], 16)))
-
-    n = 1
-    while n <= int(serial_data[6], 16):
-        print('Data byte {0}   : Hex: {1}, Int: {2}, Array #: {3}'.format(n, serial_data[n+6], int(serial_data[n + 6], 16), n + 6))
-
-        n += 1
-    
-    print('Checksum      : {0}'.format(serial_data[-2]))
-    print('End           : {0} {1}'.format(serial_data[-1], serial_data[-0]))
-
 # Get the checksum from the serial data (third to last byte)
 def get_returned_checksum(serial_data):
     return serial_data[-3:-2]
