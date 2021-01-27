@@ -240,7 +240,7 @@ def serial_command(cmd):
 
 # Write serial data for the given command and data.
 # Start, end as well as the length and checksum are added automatically.
-def send_command(command, data):
+def send_command(command, data, expect_reply=True):
     start = b'\x07\xF0'
     end = b'\x07\x0F'
     if data is None:
@@ -257,16 +257,20 @@ def send_command(command, data):
 
     result = serial_command(cmd)
 
-    if result:
-        # Increment the command by 1 to get the expected result command
-        result_command_int = int.from_bytes(command, byteorder='big') + 1
-        result_command = result_command_int.to_bytes(2, byteorder='big')
+    if expect_reply:
+        if result:
+            # Increment the command by 1 to get the expected result command
+            result_command_int = int.from_bytes(command, byteorder='big') + 1
+            result_command = result_command_int.to_bytes(2, byteorder='big')
 
-        filtered_result = filter_and_validate(result, result_command)
+            filtered_result = filter_and_validate(result, result_command)
 
-        if filtered_result:
-            ser.write(b'\x07\xF3')  # Send an ACK after receiving the correct result
-            return filtered_result
+            if filtered_result:
+                ser.write(b'\x07\xF3')  # Send an ACK after receiving the correct result
+                return filtered_result
+    else:
+        # TODO: Maybe check if there was an "ACK", but given the noise on the serial bus, not sure if that makes sense.
+        return True
 
     return None
 
@@ -288,9 +292,9 @@ def split_result(data):
 
 def set_ventilation_level(nr):
     if 0 <= nr <= 4:
-        data = send_command(b'\x00\x99', bytes([nr]))
+        data = send_command(b'\x00\x99', bytes([nr]), expect_reply=False)
     else:
-        data = None
+        data = False
         warning_msg('Wrong parameter: {0}'.format(nr))
 
     if data:
@@ -305,7 +309,7 @@ def set_ventilation_level(nr):
         get_fan_status()
 
 def set_fan_levels():
-    data = send_command(b'\x00\xCF', b'\x00')
+    data = send_command(b'\x00\xCF', b'\x00', expect_reply=False)
 
     if data:
         info_msg('Changed the fan levels')
@@ -334,7 +338,7 @@ def set_pc_mode(nr):
 
 def set_comfort_temperature(nr):
     if 15 <= nr <= 27:
-        data = send_command(b'\x00\xD3', bytes([nr * 2 + 40]))
+        data = send_command(b'\x00\xD3', bytes([nr * 2 + 40]), expect_reply=False)
     else:
         data = None
         warning_msg('Wrong temperature provided: {0}. No changes made.'.format(nr))
