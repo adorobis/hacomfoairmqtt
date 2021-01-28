@@ -607,7 +607,9 @@ except:
     warning_msg(sys.exc_info())
 else:
     if enablePcMode:
-       set_pc_mode(3)
+        set_pc_mode(3)
+    else:
+        set_pc_mode(0)  # If PC mode is disabled, deactivate it (in case it was activated in an earlier run)
 
     mqttc.loop_start()
     while True:
