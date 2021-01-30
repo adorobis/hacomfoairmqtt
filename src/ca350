@@ -22,7 +22,6 @@ start script with python3.7 ca350
 import paho.mqtt.client as mqtt
 import time
 import serial
-import json
 import sys
 import configparser
 import os
@@ -64,21 +63,80 @@ def warning_msg(message):
 def info_msg(message):
     print('{0} INFO: {1}'.format(time.strftime("%d-%m-%Y %H:%M:%S", time.gmtime()), message))
 
-def debug_data(serial_data):
-    print('Ack           : {0} {1}'.format(serial_data[0], serial_data[1]))
-    print('Start         : {0} {1}'.format(serial_data[2], serial_data[3]))
-    print('Command       : {0} {1}'.format(serial_data[4], serial_data[5]))
-    print('Nr data bytes : {0} (integer {1})'.format(serial_data[6], int(serial_data[6], 16)))
+# Get the checksum from the serial data (third to last byte)
+def get_returned_checksum(serial_data):
+    return serial_data[-3:-2]
 
-    n = 1
-    while n <= int(serial_data[6], 16):
-        print('Data byte {0}   : Hex: {1}, Int: {2}, Array #: {3}'.format(n, serial_data[n+6], int(serial_data[n + 6], 16), n + 6))
+# Calculate the checksum for a given byte string received from the serial connection.
+# The checksum is calculated by adding all bytes (excluding start and end) plus 173.
+# If the value 0x07 appears twice in the data area, only one 0x07 is used for the checksum calculation.
+# If the checksum is greater than one byte, the least significant byte is used.
+def calculate_checksum(serial_data_slice):
+    checksum = 173
+    seven_encountered = False
 
-        n += 1
-    
-    print('Checksum      : {0}'.format(serial_data[-2]))
-    print('End           : {0} {1}'.format(serial_data[-1], serial_data[-0]))
+    for byte in serial_data_slice:
+        if byte == 0x07:
+            if not seven_encountered:
+                seven_encountered = True  # Mark that we have encountered the first 0x07
+            else:
+                seven_encountered = False # Next one will be counted again
+                continue  # Skip the seconds 0x07
 
+        checksum += int(byte)
+
+    return checksum.to_bytes(((checksum.bit_length() + 8) // 8), byteorder='big')[-1:]
+
+# Calculate the length for a given byte string received from the serial connection.
+# If the value 0x07 appears twice in the data area, only one 0x07 is used for the checksum calculation.
+def calculate_length(serial_data_slice):
+    length = 0
+    seven_encountered = False
+
+    for byte in serial_data_slice:
+        if byte == 0x07:
+            if not seven_encountered:
+                seven_encountered = True  # Mark that we have encountered the first 0x07
+            else:
+                seven_encountered = False # Next one will be counted again
+                continue  # Skip the seconds 0x07
+
+        length += 1
+
+    return length.to_bytes(1, byteorder='big')
+
+# Filter the data from the serial connection to find the output we're looking for.
+# The serial connection is sometimes busy with input/output from other devices (e. g. ComfoSense).
+# Then, validate the checksum for the output we're looking for.
+# Currently, the data returned is passed as a string, so we'll need to convert it back to bytes for easier handling.
+def filter_and_validate(data, result_command):
+    split_data = split_result(data)
+
+    for line in split_data:
+        if not (len(line) == 2 and line[0] == b'\x07' and line[1] == b'\xf3'):  # Check if it's not an ACK
+            if (
+                    len(line) >= 7 and
+                    line[0:2] == b'\x07\xf0' and  # correct start
+                    line[-2:] == b'\x07\x0f' and  # correct end
+                    line[2:4] == result_command[0:2] # is it the return we're looking for
+            ):
+                # Validate length of data
+                line_length = calculate_length(line[5:-3])  # Strip start, command, length, checksum and end
+                if line[4:5] != line_length:
+                    warning_msg('Incorrect length')
+                    return None
+
+                # Validate checksum
+                returned_checksum = get_returned_checksum(line)
+                calculated_checksum = calculate_checksum(line[2:-3])  # Strip start, checksum and end
+                if returned_checksum != calculated_checksum:
+                    warning_msg('Incorrect checksum')
+                    return None
+
+                return line[5:-3]  # Only return data, no start, end, length and checksum
+
+    warning_msg('Expected return not found')
+    return None
 
 def on_message(client, userdata, message):
     #print("message check")
@@ -87,49 +145,49 @@ def on_message(client, userdata, message):
     if message.topic == "comfoair/ha_climate_mode/fan/set":
         selector = msg_data
         if selector == "off":
-           print("comfoair/ha_climate_mode/fan/set is off (speed 10)")
-           fan_level=1
+            print("comfoair/ha_climate_mode/fan/set is off (speed 10)")
+            fan_level = 1
         elif selector == "low":
-           print("comfoair/ha_climate_mode/fan/set is low (speed 20)")
-           fan_level=2
+            print("comfoair/ha_climate_mode/fan/set is low (speed 20)")
+            fan_level = 2
         elif selector == "medium":
-           print("comfoair/ha_climate_mode/fan/set is medium (speed 30)")
-           fan_level=3
+            print("comfoair/ha_climate_mode/fan/set is medium (speed 30)")
+            fan_level = 3
         elif selector == "high":
-           print("comfoair/ha_climate_mode/fan/set is high (speed 40)")
-           fan_level=4
+            print("comfoair/ha_climate_mode/fan/set is high (speed 40)")
+            fan_level = 4
         else:
-           print("comfoair/ha_climate_mode/fan/set got unkown value "+msg_data);
+            print("comfoair/ha_climate_mode/fan/set got unkown value "+msg_data)
     elif message.topic == "comfoair/speed/set":
         selector = msg_data
         if selector == "10":
             print("comfoair/speed/set is 10")
-            fan_level=1
+            fan_level = 1
         elif "20" == selector:
             print("comfoair/speed/set is 20")
-            fan_level=2
+            fan_level = 2
         elif "30" == selector:
             print("comfoair/speed/set is 30")
-            fan_level=3
+            fan_level = 3
         elif "40" == selector:
             print("comfoair/speed/set is 40")
-            fan_level=4
+            fan_level = 4
     elif message.topic == "comfoair/ha_climate_mode/set":
         selector = msg_data
         if selector == "off":
             print("comfoair/on/set is 10")
-            fan_level=1  
+            fan_level = 1
         elif selector == "fan_only":
             print("comfoair/on/set is 20")
-            fan_level=2 
+            fan_level = 2
     elif message.topic == "comfoair/on/set":
         selector = msg_data
         if selector == "10":
             print("comfoair/on/set is 10")
-            fan_level=1
+            fan_level = 1
         elif selector == "20":
             print("comfoair/on/set is 20")
-            fan_level=2
+            fan_level = 2
     elif message.topic == "comfoair/comforttemp/set":
         comforttemp = int(float(msg_data))
         set_comfort_temperature(comforttemp)
@@ -137,26 +195,26 @@ def on_message(client, userdata, message):
     else:
         print("Message "+message.topic+" with message: "+msg_data+" ignored")
     print('FanLevel ' + str(fan_level))
-    if fan_level >= 0 and fan_level <= 4:
+    if 0 <= fan_level <= 4:
         set_ventilation_level(fan_level)
         get_ventilation_status()
 
-def publish_message(msg, mqtt_path):                                                                      
+def publish_message(msg, mqtt_path):
     try:
-      mqttc.publish(mqtt_path, payload=msg, qos=0, retain=True)
+        mqttc.publish(mqtt_path, payload=msg, qos=0, retain=True)
     except:
-      warning_msg('Publishing message '+msg+' to topic '+mqtt_path+' failed.')
-      warning_msg('Exception information:')
-      warning_msg(sys.exc_info())
+        warning_msg('Publishing message '+msg+' to topic '+mqtt_path+' failed.')
+        warning_msg('Exception information:')
+        warning_msg(sys.exc_info())
     else:
-      time.sleep(0.1)
-      debug_msg('published message {0} on topic {1} at {2}'.format(msg, mqtt_path, time.asctime(time.localtime(time.time()))))
+        time.sleep(0.1)
+        debug_msg('published message {0} on topic {1} at {2}'.format(msg, mqtt_path, time.asctime(time.localtime(time.time()))))
 
 def delete_message(mqtt_path):
     try:
-        mqttc.publish(mqtt_path,payload="",qos=0,retain=False)
+        mqttc.publish(mqtt_path, payload="", qos=0, retain=False)
     except:
-        warning_msg('Deleting topic '+mqtt_path+' failed.')
+        warning_msg('Deleting topic ' + mqtt_path + ' failed.')
         warning_msg('Exception information:')
         warning_msg(sys.exc_info())
     else:
@@ -165,12 +223,12 @@ def delete_message(mqtt_path):
 
 def serial_command(cmd):
     try:
-        data = []
+        data = b''
         ser.write(cmd)
         time.sleep(2)
 
         while ser.inWaiting() > 0:
-            data.append(ser.read(1).hex())
+            data += ser.read(1)
         if len(data) > 0:
             return data
         else:
@@ -180,55 +238,86 @@ def serial_command(cmd):
         warning_msg(sys.exc_info())
         return None
 
+# Write serial data for the given command and data.
+# Start, end as well as the length and checksum are added automatically.
+def send_command(command, data, expect_reply=True):
+    start = b'\x07\xF0'
+    end = b'\x07\x0F'
+    if data is None:
+        length = b'\x00'
+        command_plus_data = command + length
+    else:
+        length_int = len(data)
+        length = length_int.to_bytes(((length_int.bit_length() + 8) // 8), byteorder='big')[-1:]
+        command_plus_data = command + length + data
+
+    checksum = calculate_checksum(command_plus_data)
+
+    cmd = start + command_plus_data + checksum + end
+
+    result = serial_command(cmd)
+
+    if expect_reply:
+        if result:
+            # Increment the command by 1 to get the expected result command
+            result_command_int = int.from_bytes(command, byteorder='big') + 1
+            result_command = result_command_int.to_bytes(2, byteorder='big')
+
+            filtered_result = filter_and_validate(result, result_command)
+
+            if filtered_result:
+                ser.write(b'\x07\xF3')  # Send an ACK after receiving the correct result
+                return filtered_result
+    else:
+        # TODO: Maybe check if there was an "ACK", but given the noise on the serial bus, not sure if that makes sense.
+        return True
+
+    return None
+
+# Split the data at \x07\f0 (start) or \x07\xf3 (ACK)
+def split_result(data):
+    split_data = []
+    line = b''
+
+    for index in range(len(data)):
+        byte = data[index:index+1]
+        nextbyte = data[index+1:index+2]
+        if index > 0 and len(data) > index+2 and (byte == b'\x07' and nextbyte == b'\xf0' or byte == b'\x07' and nextbyte == b'\xf3'):
+            split_data.append(line)
+            line = b''
+        line += byte
+
+    split_data.append(line)
+    return split_data
+
 def set_ventilation_level(nr):
-    if nr == 0:
-        data = serial_command(b'\x07\xF0\x00\x99\x01\x00\x47\x07\x0F')
-    elif nr == 1:
-        data = serial_command(b'\x07\xF0\x00\x99\x01\x01\x48\x07\x0F')
-    elif nr == 2:
-        data = serial_command(b'\x07\xF0\x00\x99\x01\x02\x49\x07\x0F')
-    elif nr == 3:
-        data = serial_command(b'\x07\xF0\x00\x99\x01\x03\x4A\x07\x0F')
-    elif nr == 4:
-        data = serial_command(b'\x07\xF0\x00\x99\x01\x04\x4B\x07\x0F')        
+    if 0 <= nr <= 4:
+        data = send_command(b'\x00\x99', bytes([nr]), expect_reply=False)
+    else:
+        data = False
+        warning_msg('Wrong parameter: {0}'.format(nr))
 
     if data:
-        if ( data[0] == '07' and data[1] == 'f3' ):
-            info_msg('Changed the ventilation to {0}'.format(nr))
-            get_ventilation_status()
-            get_fan_status()
-        else:
-            warning_msg('Changing the ventilation to {0} went wrong, did not receive an ACK after the set command'.format(nr))
-            time.sleep(2)
-            set_ventilation_level(nr)
-            get_ventilation_status()
-            get_fan_status()
+        info_msg('Changed the ventilation to {0}'.format(nr))
+        get_ventilation_status()
+        get_fan_status()
     else:
-        warning_msg('Changing the ventilation to {0} went wrong, did not receive an ACK after the set command'.format(nr))
+        warning_msg('Changing the ventilation to {0} went wrong, received invalid data after the set command'.format(nr))
         time.sleep(2)
         set_ventilation_level(nr)
         get_ventilation_status()
         get_fan_status()
-def set_fan_levels():
 
-#    data = serial_command(b'\x07\xF0\x00\xCF\x09\x0F\x19\x28\x0F\x19\x28\x46\x46\x00\xB0\x07\x0F')
-    data = serial_command(b'\x07\xF0\x00\xCF\x09\x0E\x14\x28\x0E\x14\x28\x46\x46\x00\x9D\x07\x0F')
+def set_fan_levels():
+    data = send_command(b'\x00\xCF', b'\x00', expect_reply=False)
 
     if data:
-        if ( data[0] == '07' and data[1] == 'f3' ):
-            info_msg('Changed the fan levels')
-            get_ventilation_levels()
-            get_ventilation_status()
-            get_fan_status()
-        else:
-            warning_msg('Changing the fan levels went wrong, did not receive an ACK after the set command')
-            time.sleep(2)
-            set_fan_levels()
-            get_ventilation_levels()
-            get_ventilation_status()
-            get_fan_status()
+        info_msg('Changed the fan levels')
+        get_ventilation_levels()
+        get_ventilation_status()
+        get_fan_status()
     else:
-        warning_msg('Changing the ventilation to {0} went wrong, did not receive an ACK after the set command')
+        warning_msg('Changing the fan levels went wrong, received invalid data after the set command')
         time.sleep(2)
         set_fan_levels()
         get_ventilation_levels()
@@ -236,269 +325,180 @@ def set_fan_levels():
         get_fan_status()
 
 def set_pc_mode(nr):
-    if nr == 3:
-        data = serial_command(b'\x07\xF0\x00\x9B\x01\x03\x4C\x07\x0F')
-    elif nr == 0:
-        data = serial_command(b'\x07\xF0\x00\x9B\x01\x00\x49\x07\x0F')
-    elif nr == 1:
-        data = serial_command(b'\x07\xF0\x00\x9B\x01\x01\x4A\x07\x0F')
-    elif nr == 4:
-        data = serial_command(b'\x07\xF0\x00\x9B\x01\x04\x4D\x07\x0F')
+    if 0 <= nr <= 4 and nr != 2:
+        data = send_command(b'\x00\x9B', bytes([nr]))
     else:
-        warning_msg('Wrong parameter: {0}'.format(nr))    
-    print(data)
-    if data:
-        if ( data[0] == '07' and data[1] == 'f3' ):
-            print(data)
-            info_msg('Changed RS232 mode to {0}'.format(nr))
-        else:
-            warning_msg('Changing the RS232 mode went wrong')
+        data = None
+        warning_msg('Wrong parameter: {0}'.format(nr))
 
+    if data:
+        info_msg('Changed RS232 mode to {0}'.format(nr))
     else:
         warning_msg('Changing the RS232 mode went wrong')
 
 def set_comfort_temperature(nr):
-    if nr == 15:
-        data = serial_command(b'\x07\xF0\x00\xD3\x01\x46\xC7\x07\x0F')
-    elif nr == 16:
-        data = serial_command(b'\x07\xF0\x00\xD3\x01\x48\xC9\x07\x0F')
-    elif nr == 17:
-        data = serial_command(b'\x07\xF0\x00\xD3\x01\x4A\xCB\x07\x0F')
-    elif nr == 18:
-        data = serial_command(b'\x07\xF0\x00\xD3\x01\x4C\xCD\x07\x0F')
-    elif nr == 19:
-        data = serial_command(b'\x07\xF0\x00\xD3\x01\x4E\xCF\x07\x0F')
-    elif nr == 20:
-        data = serial_command(b'\x07\xF0\x00\xD3\x01\x50\xD1\x07\x0F')
-    elif nr == 21:
-        data = serial_command(b'\x07\xF0\x00\xD3\x01\x52\xD3\x07\x0F')
-    elif nr == 22:
-        data = serial_command(b'\x07\xF0\x00\xD3\x01\x54\xD5\x07\x0F')
-    elif nr == 23:
-        data = serial_command(b'\x07\xF0\x00\xD3\x01\x56\xD7\x07\x0F')
-    elif nr == 24:
-        data = serial_command(b'\x07\xF0\x00\xD3\x01\x58\xD9\x07\x0F')
-    elif nr == 25:
-        data = serial_command(b'\x07\xF0\x00\xD3\x01\x5A\xDB\x07\x0F')        
-    elif nr == 26:
-        data = serial_command(b'\x07\xF0\x00\xD3\x01\x5C\xDD\x07\x0F')
-    elif nr == 27:
-        data = serial_command(b'\x07\xF0\x00\xD3\x01\x5E\xDF\x07\x0F')
+    if 15 <= nr <= 27:
+        data = send_command(b'\x00\xD3', bytes([nr * 2 + 40]), expect_reply=False)
     else:
+        data = None
         warning_msg('Wrong temperature provided: {0}. No changes made.'.format(nr))
+
     if data:
-        if ( data[0] == '07' and data[1] == 'f3' ):
-            info_msg('Changed comfort temperature to {0}'.format(nr))
-            get_temp()
-            get_bypass_status()
-            
-        else:
-            warning_msg('Changing comfort temperature to {0} went wrong, did not receive an ACK after the set command'.format(nr))
-            time.sleep(2)
-            set_comfort_temperature(nr)
+        info_msg('Changed comfort temperature to {0}'.format(nr))
+        get_temp()
+        get_bypass_status()
     else:
         warning_msg('Changing comfort temperature to {0} went wrong, did not receive an ACK after the set command'.format(nr))
         time.sleep(2)
         set_comfort_temperature(nr)
-        
-def get_temp():
-    # 0x07 0xF0 0x00 0xD1 0x00 0x7E 0x07 0x0F 
-    # Checksum: 0x7E(0x00 0xD1) = 0 + 209 + 0 + 173 = 382
-    # End: 0x07 0x0F
 
-    data = serial_command(b'\x07\xF0\x00\xD1\x00\x7E\x07\x0F')
-    
-    if data == None:
+def get_temp():
+    data = send_command(b'\x00\xD1', None)
+
+    if data is None:
         warning_msg('get_temp function could not get serial data')
     else:
-        if ( data[0] == '07' and data[1] == 'f3' ):
-            if len(data) > 11:
-                ComfortTemp = int(data[7], 16) / 2 - 20
-                OutsideAirTemp = int(data[8], 16) / 2.0 - 20
-                SupplyAirTemp = int(data[9], 16) / 2.0 - 20
-                ReturnAirTemp = int(data[10], 16) / 2.0 - 20
-                ExhaustAirTemp = int(data[11], 16) / 2.0 - 20
-                if ComfortTemp > 10 and ComfortTemp < 30:
-                    publish_message(msg=str(ComfortTemp), mqtt_path='comfoair/comforttemp')
-                    publish_message(msg=str(OutsideAirTemp), mqtt_path='comfoair/outsidetemp')
-                    publish_message(msg=str(SupplyAirTemp), mqtt_path='comfoair/supplytemp')
-                    publish_message(msg=str(ExhaustAirTemp), mqtt_path='comfoair/exhausttemp')    
-                    publish_message(msg=str(ReturnAirTemp), mqtt_path='comfoair/returntemp')
-                    debug_msg('OutsideAirTemp: {0}, SupplyAirTemp: {1}, ReturnAirTemp: {2}, ExhaustAirTemp: {3}, ComfortTemp: {4}'.format(OutsideAirTemp, SupplyAirTemp, ReturnAirTemp, ExhaustAirTemp, ComfortTemp))
-                else:
-                    warning_msg('get_temp returned bad temp data. Retrying in 2 sec')
-                    warning_msg('OutsideAirTemp: {0}, SupplyAirTemp: {1}, ReturnAirTemp: {2}, ExhaustAirTemp: {3}, ComfortTemp: {4}'.format(OutsideAirTemp, SupplyAirTemp, ReturnAirTemp, ExhaustAirTemp, ComfortTemp))
-                    time.sleep(2)
-                    get_temp()
+        if len(data) > 4:
+            ComfortTemp = data[0] / 2.0 - 20
+            OutsideAirTemp = data[1] / 2.0 - 20
+            SupplyAirTemp = data[2] / 2.0 - 20
+            ReturnAirTemp = data[3] / 2.0 - 20
+            ExhaustAirTemp = data[4] / 2.0 - 20
+            if 10 < ComfortTemp < 30:
+                publish_message(msg=str(ComfortTemp), mqtt_path='comfoair/comforttemp')
+                publish_message(msg=str(OutsideAirTemp), mqtt_path='comfoair/outsidetemp')
+                publish_message(msg=str(SupplyAirTemp), mqtt_path='comfoair/supplytemp')
+                publish_message(msg=str(ExhaustAirTemp), mqtt_path='comfoair/exhausttemp')
+                publish_message(msg=str(ReturnAirTemp), mqtt_path='comfoair/returntemp')
+                debug_msg('OutsideAirTemp: {0}, SupplyAirTemp: {1}, ReturnAirTemp: {2}, ExhaustAirTemp: {3}, ComfortTemp: {4}'.format(OutsideAirTemp, SupplyAirTemp, ReturnAirTemp, ExhaustAirTemp, ComfortTemp))
             else:
-                warning_msg('get_temp function data array too short')
+                warning_msg('get_temp returned bad temp data. Retrying in 2 sec')
+                warning_msg('OutsideAirTemp: {0}, SupplyAirTemp: {1}, ReturnAirTemp: {2}, ExhaustAirTemp: {3}, ComfortTemp: {4}'.format(OutsideAirTemp, SupplyAirTemp, ReturnAirTemp, ExhaustAirTemp, ComfortTemp))
+                time.sleep(2)
+                get_temp()
         else:
-            warning_msg('get_temp function wrong ACK message')
-def get_ventilation_levels():
-    # 0x07 0xF0 0x00 0xD1 0x00 0x7A 0x07 0x0F 
-    # Checksum: 0x7A(0x00 0xCD) = 0 + 205 + 0 + 173 = 378
-    # End: 0x07 0x0F
+            warning_msg('get_temp function: incorrect data received')
 
-    data = serial_command(b'\x07\xF0\x00\xCD\x00\x7A\x07\x0F')
-    
-    if data == None:
+def get_ventilation_levels():
+    data = send_command(b'\x00\xCD', None)
+
+    if data is None:
         warning_msg('get_ventilation_levels function could not get serial data')
     else:
-        if ( data[0] == '07' and data[1] == 'f3' ):
-            if len(data) > 18:
-                OutAbsent = int(data[7], 16)
-                OutLow = int(data[8], 16)
-                OutMid = int(data[9], 16)
-                InAbsent = int(data[10], 16)
-                InLow = int(data[11], 16)
-                InMid = int(data[12], 16)
-                OutHigh = int(data[17], 16)
-                InHigh = int(data[18], 16)
-                print("Serial ventilation levels data: "+str(data))
-                print(str(OutAbsent))
-                print(str(OutLow))
-                print(str(OutMid))
-                print(str(OutHigh))
-                print(str(InAbsent))
-                print(str(InLow))
-                print(str(InMid))
-                print(str(InHigh))
-            else:
-                warning_msg('get_ventilation_levels function data array too short')
+        if len(data) > 12:
+            OutAbsent = data[0]
+            OutLow = data[1]
+            OutMid = data[2]
+            InAbsent = data[3]
+            InLow = data[4]
+            InMid = data[5]
+            OutHigh = data[10]
+            InHigh = data[11]
+            debug_msg('OutAbsent: {}, OutLow: {}, OutMid: {}, OutHigh: {}, InAbsent: {}, InLow: {}, InMid: {}, InHigh: {}'.format(OutAbsent, OutLow, OutMid, OutHigh, InAbsent, InLow, InMid, InHigh))
         else:
-            warning_msg('get_ventilation_levels function wrong ACK message')
+            warning_msg('get_ventilation_levels function data array too short')
 
 def get_ventilation_status():
-    data = serial_command(b'\x07\xF0\x00\xCD\x00\x7A\x07\x0F')
+    data = send_command(b'\x00\xCD', None)
 
-    if data == None:
+    if data is None:
         warning_msg('get_ventilation_status function could not get serial data')
     else:
-        if ( data[0] == '07' and data[1] == 'f3' ):
-            if len(data) > 16:
-                ReturnAirLevel = int(data[13], 16)
-                SupplyAirLevel = int(data[14], 16)
-                FanLevel = int(data[15], 16)
-                IntakeFanActive = int(data[16], 16)
+        if len(data) > 9:
+            ReturnAirLevel = data[6]
+            SupplyAirLevel = data[7]
+            FanLevel = data[8]
+            IntakeFanActive = data[9]
 
-                if IntakeFanActive == 1:
-                    StrIntakeFanActive = 'Yes'
-                elif IntakeFanActive == 0:
-                    StrIntakeFanActive = 'No'
-                else:
-                    StrIntakeFanActive = 'Unknown'
-
-                if FanLevel == 1:
-                    publish_message(msg='10', mqtt_path='comfoair/on/state')
-                    publish_message(msg='off', mqtt_path='comfoair/ha_climate_mode')
-                    publish_message(msg='off', mqtt_path='comfoair/ha_climate_mode/fan')
-                    publish_message(msg='20', mqtt_path='comfoair/speed/state')
-                elif FanLevel == 2 or FanLevel == 3 or FanLevel == 4:
-                    publish_message(msg=str(FanLevel*10), mqtt_path='comfoair/speed/state')
-                    publish_message(msg='20', mqtt_path='comfoair/on/state')
-                    publish_message(msg='fan_only', mqtt_path='comfoair/ha_climate_mode')
-                    if FanLevel == 2:
-                      publish_message(msg='low', mqtt_path='comfoair/ha_climate_mode/fan')
-                    elif FanLevel == 3:
-                      publish_message(msg='medium', mqtt_path='comfoair/ha_climate_mode/fan')
-                    elif FanLevel == 4:
-                      publish_message(msg='high', mqtt_path='comfoair/ha_climate_mode/fan')
-                else:
-                    warning_msg('Wrong FanLevel value: {0}'.format(FanLevel))
-                    time.sleep(2)
-                    get_ventilation_status()
+            if IntakeFanActive == 1:
+                StrIntakeFanActive = 'Yes'
+            elif IntakeFanActive == 0:
+                StrIntakeFanActive = 'No'
             else:
-                warning_msg('get_ventilation_status function data array too short')
+                StrIntakeFanActive = 'Unknown'
+
+            debug_msg('ReturnAirLevel: {}, SupplyAirLevel: {}, FanLevel: {}, IntakeFanActive: {}'.format(ReturnAirLevel, SupplyAirLevel, FanLevel, StrIntakeFanActive))
+
+            if FanLevel == 1:
+                publish_message(msg='10', mqtt_path='comfoair/on/state')
+                publish_message(msg='off', mqtt_path='comfoair/ha_climate_mode')
+                publish_message(msg='off', mqtt_path='comfoair/ha_climate_mode/fan')
+                publish_message(msg='20', mqtt_path='comfoair/speed/state')
+            elif FanLevel == 2 or FanLevel == 3 or FanLevel == 4:
+                publish_message(msg=str(FanLevel*10), mqtt_path='comfoair/speed/state')
+                publish_message(msg='20', mqtt_path='comfoair/on/state')
+                publish_message(msg='fan_only', mqtt_path='comfoair/ha_climate_mode')
+                if FanLevel == 2:
+                  publish_message(msg='low', mqtt_path='comfoair/ha_climate_mode/fan')
+                elif FanLevel == 3:
+                  publish_message(msg='medium', mqtt_path='comfoair/ha_climate_mode/fan')
+                elif FanLevel == 4:
+                  publish_message(msg='high', mqtt_path='comfoair/ha_climate_mode/fan')
+            else:
+                warning_msg('Wrong FanLevel value: {0}'.format(FanLevel))
                 time.sleep(2)
                 get_ventilation_status()
         else:
-            warning_msg('get_ventilation_status function wrong ACK message')
-            
-#        info_msg('ReturnAirLevel: {}, SupplyAirLevel: {}, FanLevel: {}, IntakeFanActive: {}'.format(ReturnAirLevel, SupplyAirLevel, FanLevel, StrIntakeFanActive))
+            warning_msg('get_ventilation_status function: incorrect data received')
 
 def get_fan_status():
-    # 0x07 0xF0 0x00 0x0B 0x00 0xB8 0x07 0x0F 
-    # Checksum: 0xB8 (0x00 0x0B) = 0 + 11 + 0 + 173 = 184
-    # End: 0x07 0x0F
+    data = send_command(b'\x00\x0B', None)
 
-    data = serial_command(b'\x07\xF0\x00\x0B\x00\xB8\x07\x0F')
-
-    if data == None:
+    if data is None:
         warning_msg('function get_fan_status could not get serial data')
     else:
-        if ( data[0] == '07' and data[1] == 'f3' ):
-            if len(data) > 8:
-                IntakeFanSpeed  = int(data[7], 16)
-                ExhaustFanSpeed = int(data[8], 16)  
-                IntakeFanRPM    = int(data[9]+''+data[10], 16)
-                ExhaustFanRPM   = int(data[11]+''+data[12], 16)
-                publish_message(msg=str(IntakeFanSpeed), mqtt_path='comfoair/intakefanspeed')
-                publish_message(msg=str(ExhaustFanSpeed), mqtt_path='comfoair/exhaustfanspeed')
-                publish_message(msg=str(IntakeFanRPM), mqtt_path='comfoair/intakefanrpm')
-                publish_message(msg=str(ExhaustFanRPM), mqtt_path='comfoair/exhaustfanrpm')
-            else:
-                warning_msg('function get_fan_status data array too short')
+        if len(data) > 5:
+            IntakeFanSpeed  = data[0]
+            ExhaustFanSpeed = data[1]
+            IntakeFanRPM    = int.from_bytes(data[2:4], byteorder='big')
+            ExhaustFanRPM   = int.from_bytes(data[4:6], byteorder='big')
+            publish_message(msg=str(IntakeFanSpeed), mqtt_path='comfoair/intakefanspeed')
+            publish_message(msg=str(ExhaustFanSpeed), mqtt_path='comfoair/exhaustfanspeed')
+            publish_message(msg=str(IntakeFanRPM), mqtt_path='comfoair/intakefanrpm')
+            publish_message(msg=str(ExhaustFanRPM), mqtt_path='comfoair/exhaustfanrpm')
+            debug_msg('IntakeFanSpeed {0}%, ExhaustFanSpeed {1}%, IntakeAirRPM {2}, ExhaustAirRPM {3}'.format(IntakeFanSpeed, ExhaustFanSpeed, IntakeFanRPM, ExhaustFanRPM))
         else:
-            warning_msg('function get_fan_status wrong ACK message')
-#        debug_msg('IntakeFanSpeed {0}%, ExhaustFanSpeed {1}%, IntakeAirRPM {2}, ExhaustAirRPM {3}'.format(IntakeFanSpeed,ExhaustFanSpeed,IntakeFanRPM,ExhaustFanRPM))
+            warning_msg('function get_fan_status data array too short')
 
 def get_bypass_status():
-    # 0x07 0xF0 0x00 0x0B 0x00 0xB8 0x07 0x0F 
-    # Checksum: 0xB8 (0x00 0x0B) = 0 + 11 + 0 + 173 = 184
-    # End: 0x07 0x0F
+    data = send_command(b'\x00\xDF', None)
 
-    data = serial_command(b'\x07\xF0\x00\xDF\x00\x8C\x07\x0F')
-
-    if data == None:
+    if data is None:
         warning_msg('function get_bypass_status could not get serial data')
     else:
-        if ( data[0] == '07' and data[1] == 'f3' ):
-            if len(data) > 13:
-                BypassStatus = int(data[10], 16)
-                SummerMode = int(data[13],16)
-                publish_message(msg=str(BypassStatus), mqtt_path='comfoair/bypassstatus')
-                if SummerMode==1:
-                    publish_message(msg='Summer', mqtt_path='comfoair/bypassmode')
-                else:
-                    publish_message(msg='Winter', mqtt_path='comfoair/bypassmode')
+        if len(data) > 6:
+            BypassStatus = data[3]
+            SummerMode = data[6]
+            publish_message(msg=str(BypassStatus), mqtt_path='comfoair/bypassstatus')
+            if SummerMode == 1:
+                publish_message(msg='Summer', mqtt_path='comfoair/bypassmode')
             else:
-                warning_msg('function get_bypass_status data array too short')
+                publish_message(msg='Winter', mqtt_path='comfoair/bypassmode')
         else:
-            warning_msg('function get_bypass_status wrong ACK message')
+            warning_msg('function get_bypass_status data array too short')
 
 def get_filter_status():
-    # 0x07 0xF0 0x00 0xD9 0x00 0x86 0x07 0x0F 
-    # Start: 0x07 0xF0
-    # Command: 0x00 0xD9
-    # Number data bytes: 0x00
-    # Checksum: 0x86 (0x00 0xD9) = 0 + 217 + 0 + 173 = 390
-    # End: 0x07 0x0F
+    data = send_command(b'\x00\xD9', None)
 
-    data = serial_command(b'\x07\xF0\x00\xD9\x00\x86\x07\x0F')
-
-    if data == None:
+    if data is None:
         warning_msg('get_filter_status function could not get serial data')
-
     else:
-        if ( data[0] == '07' and data[1] == 'f3' ):
-            if len(data) > 18:
-                if int(data[18], 16) == 0:
-                    FilterStatus = 'Ok'
-                    FilterStatusBinary = 1
-                elif int(data[18], 16) == 1:
-                    FilterStatus = 'Full'
-                    FilterStatusBinary = 0
-                else:
-                    FilterStatus = 'Unknown'
-                    FilterStatusBinary = 0
-                publish_message(msg=str(FilterStatus), mqtt_path='comfoair/filterstatus')
-                publish_message(msg=int(FilterStatusBinary), mqtt_path='comfoair/filterstatus_binary')
-                debug_msg('FilterStatus: {0}'.format(FilterStatus))
+        if len(data) > 16:
+            if data[11] == 0:
+                FilterStatus = 'Ok'
+                FilterStatusBinary = 1
+            elif data[11] == 1:
+                FilterStatus = 'Full'
+                FilterStatusBinary = 0
             else:
-                warning_msg('get_filter_status data array too short')
+                FilterStatus = 'Unknown'
+                FilterStatusBinary = 0
+            publish_message(msg=str(FilterStatus), mqtt_path='comfoair/filterstatus')
+            publish_message(msg=int(FilterStatusBinary), mqtt_path='comfoair/filterstatus_binary')
+            debug_msg('FilterStatus: {0}'.format(FilterStatus))
         else:
-            warning_msg('get_filter_status wrong ACK message')
-            
+            warning_msg('get_filter_status data array too short')
+
 def recon():
     try:
         mqttc.reconnect()
@@ -508,7 +508,7 @@ def recon():
         warning_msg('Could not reconnect to the MQTT server. Trying again in 10 seconds')
         time.sleep(10)
         recon()
-        
+
 def topic_subscribe():
     try:
         mqttc.subscribe("comfoair/on/set", 0)
@@ -528,12 +528,12 @@ def topic_subscribe():
 
 def on_connect(client, userdata, flags, rc):
     publish_message("online","comfoair/status")
-    if HAEnableAutoDiscoveryFan is True : 
+    if HAEnableAutoDiscoveryFan is True :
         info_msg('Home Assistant MQTT Autodiscovery Topic Set: homeassistant/fan/ca350_fan/config')
         publish_message('{"name":"ca350_fan","avty_t":"comfoair/status","pl_avail":"online","pl_not_avail":"offline","stat_t": "comfoair/on/state","cmd_t": "comfoair/on/set","spd_stat_t": "comfoair/speed/state","spd_cmd_t": "comfoair/speed/set","pl_on": "20","pl_off": "10","pl_lo_spd": "20","pl_med_spd": "30","pl_hi_spd": "40","spds": ["off","low","medium","high"]}',"homeassistant/fan/ca350_fan/config")
     else:
         delete_message("homeassistant/climate/ca350_fan/config")
-    if HAEnableAutoDiscoverySensors is True : 
+    if HAEnableAutoDiscoverySensors is True :
         info_msg('Home Assistant MQTT Autodiscovery Topic Set: homeassistant/sensor/ca350_[nametemp]/config')
         publish_message('{"name":"ca350_outsidetemp","avty_t":"comfoair/status","pl_avail":"online","pl_not_avail":"offline","device_class":"temperature","state_topic":"comfoair/outsidetemp","unit_of_measurement":"°C"}',"homeassistant/sensor/ca350_outsidetemp/config")
         publish_message('{"name":"ca350_supplytemp","avty_t":"comfoair/status","pl_avail":"online","pl_not_avail":"offline","device_class":"temperature","state_topic":"comfoair/supplytemp","unit_of_measurement":"°C"}',"homeassistant/sensor/ca350_supplytemp/config")
@@ -560,20 +560,20 @@ def on_connect(client, userdata, flags, rc):
         delete_message("homeassistant/sensor/ca350_filterstatus/config")
         delete_message("homeassistant/sensor/ca350_bypass_valve/config")
         delete_message("homeassistant/sensor/ca350_summer_mode/config")
-    #ToDo: Work in progress    
-    if HAEnableAutoDiscoveryClimate is True : 
+    #ToDo: Work in progress
+    if HAEnableAutoDiscoveryClimate is True:
         info_msg('Home Assistant MQTT Autodiscovery Topic Set: homeassistant/climate/ca350_climate/config')
         publish_message('{"name":"ca350_climate","avty_t":"comfoair/status","pl_avail":"online","pl_not_avail":"offline","temp_cmd_t":"comfoair/comforttemp/set","temp_stat_t":"comfoair/comforttemp","curr_temp_t":"comfoair/supplytemp","min_temp":"15","max_temp":"27","temp_step":"1","modes":["off", "fan_only"],"mode_state_topic":"comfoair/ha_climate_mode","mode_command_topic":"comfoair/ha_climate_mode/set","fan_modes":["auto", "low", "medium", "high"],"fan_mode_state_topic":"comfoair/ha_climate_mode/fan","fan_mode_command_topic":"comfoair/ha_climate_mode/fan/set","temperature_unit":"C"}',"homeassistant/climate/ca350_climate/config")
     else:
         delete_message("homeassistant/climate/ca350_climate/config")
     topic_subscribe()
-    
+
 def on_disconnect(client, userdata, rc):
     if rc != 0:
         warning_msg('Unexpected disconnection from MQTT, trying to reconnect')
         recon()
 
-### 
+###
 # Main
 ###
 
@@ -606,8 +606,10 @@ except:
     warning_msg('Opening serial port exception:')
     warning_msg(sys.exc_info())
 else:
-    if enablePcMode == True : 
-       set_pc_mode(3)
+    if enablePcMode:
+        set_pc_mode(3)
+    else:
+        set_pc_mode(0)  # If PC mode is disabled, deactivate it (in case it was activated in an earlier run)
 
     mqttc.loop_start()
     while True:
@@ -626,5 +628,5 @@ else:
             ser.close()
             break
 
-    
+
 # End of program
