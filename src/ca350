@@ -563,7 +563,7 @@ def on_connect(client, userdata, flags, rc):
     #ToDo: Work in progress    
     if HAEnableAutoDiscoveryClimate is True : 
         info_msg('Home Assistant MQTT Autodiscovery Topic Set: homeassistant/climate/ca350_climate/config')
-        publish_message('{"name":"ca350_climate","avty_t":"comfoair/status","pl_avail":"online","pl_not_avail":"offline","temp_cmd_t":"comfoair/comforttemp/set","temp_stat_t":"comfoair/comforttemp","curr_temp_t":"comfoair/supplytemp","min_temp":"15","max_temp":"27","temp_step":"1","modes":["off", "fan_only"],"mode_state_topic":"comfoair/ha_climate_mode","mode_command_topic":"comfoair/ha_climate_mode/set","fan_modes":["auto", "low", "medium", "high"],"fan_mode_state_topic":"comfoair/ha_climate_mode/fan","fan_mode_command_topic":"comfoair/ha_climate_mode/fan/set","temperature_unit":"C"}',"homeassistant/climate/ca350_climate/config")
+        publish_message('{"name":"ca350_climate","avty_t":"comfoair/status","pl_avail":"online","pl_not_avail":"offline","temp_cmd_t":"comfoair/comforttemp/set","temp_stat_t":"comfoair/comforttemp","curr_temp_t":"comfoair/supplytemp","min_temp":"15","max_temp":"27","temp_step":"1","modes":["off", "fan_only"],"mode_state_topic":"comfoair/ha_climate_mode","mode_command_topic":"comfoair/ha_climate_mode/set","fan_modes":["auto", "off", "low", "medium", "high"],"fan_mode_state_topic":"comfoair/ha_climate_mode/fan","fan_mode_command_topic":"comfoair/ha_climate_mode/fan/set","temperature_unit":"C"}',"homeassistant/climate/ca350_climate/config")
     else:
         delete_message("homeassistant/climate/ca350_climate/config")
     topic_subscribe()
