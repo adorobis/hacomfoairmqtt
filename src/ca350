@@ -477,6 +477,18 @@ def get_bypass_status():
         else:
             warning_msg('function get_bypass_status data array too short')
 
+def get_preheating_status():
+    data = send_command(b'\x00\xE1', None)
+
+    if data is None:
+        warning_msg('function get_preheating_status could not get serial data')
+    else:
+        if len(data) > 5:
+            PreheatingStatus = data[2]
+            publish_message(msg=str(PreheatingStatus), mqtt_path='comfoair/preheatingstatus')
+        else:
+            warning_msg('function get_preheating_status data array too short')
+
 def get_filter_status():
     data = send_command(b'\x00\xD9', None)
 
@@ -547,6 +559,7 @@ def on_connect(client, userdata, flags, rc):
         publish_message('{"name":"ca350_filterstatus","avty_t":"comfoair/status","pl_avail":"online","pl_not_avail":"offline","state_topic":"comfoair/filterstatus_binary"}',"homeassistant/binary_sensor/ca350_filterstatus/config")
         publish_message('{"name":"ca350_bypass_valve","avty_t":"comfoair/status","pl_avail":"online","pl_not_avail":"offline","state_topic":"comfoair/bypassstatus"}',"homeassistant/binary_sensor/ca350_bypass_valve/config")
         publish_message('{"name":"ca350_summer_mode","avty_t":"comfoair/status","pl_avail":"online","pl_not_avail":"offline","state_topic":"comfoair/bypassstatus"}',"homeassistant/binary_sensor/ca350_summer_mode/config")
+        publish_message('{"name":"ca350_preheatingstatus","avty_t":"comfoair/status","pl_avail":"online","pl_not_avail":"offline","state_topic":"comfoair/preheatingstatus"}',"homeassistant/binary_sensor/ca350_preheatingstatus/config")
     else:
         delete_message("homeassistant/sensor/ca350_outsidetemp/config")
         delete_message("homeassistant/sensor/ca350_supplytemp/config")
@@ -621,6 +634,7 @@ else:
             get_filter_status()
             get_fan_status()
             get_bypass_status()
+            get_preheating_status()
             time.sleep(refresh_interval)
             pass
         except KeyboardInterrupt:
