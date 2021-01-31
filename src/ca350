@@ -197,7 +197,6 @@ def on_message(client, userdata, message):
     print('FanLevel ' + str(fan_level))
     if 0 <= fan_level <= 4:
         set_ventilation_level(fan_level)
-        get_ventilation_status()
 
 def publish_message(msg, mqtt_path):
     try:
@@ -305,8 +304,6 @@ def set_ventilation_level(nr):
         warning_msg('Changing the ventilation to {0} went wrong, received invalid data after the set command'.format(nr))
         time.sleep(2)
         set_ventilation_level(nr)
-        get_ventilation_status()
-        get_fan_status()
 
 def set_fan_levels():
     data = send_command(b'\x00\xCF', b'\x00', expect_reply=False)
