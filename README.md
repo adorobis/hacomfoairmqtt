@@ -91,7 +91,10 @@ Entity Name | Description
 climate.ca350_fan | Expose Temperature Control & Fan Control
 
 ## HA Lovelace Widget:
-An read only Lovelace Widget - depending on the MQTT AD enities: https://github.com/TimWeyand/lovelace-comfoair
+The following Lovelace widgets depend on the MQTT AD enities and can be used with this service:
+
+* https://github.com/TimWeyand/lovelace-comfoair
+* https://github.com/mweimerskirch/lovelace-hacomfoairmqtt
 
 ## TODO:
 - [ ] Create installation script for automatic installation of the script
