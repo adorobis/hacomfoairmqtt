@@ -450,8 +450,8 @@ def get_fan_status():
         if len(data) > 5:
             IntakeFanSpeed  = data[0]
             ExhaustFanSpeed = data[1]
-            IntakeFanRPM    = int.from_bytes(data[2:4], byteorder='big')
-            ExhaustFanRPM   = int.from_bytes(data[4:6], byteorder='big')
+            IntakeFanRPM    = int(1875000 / int.from_bytes(data[2:4], byteorder='big'))
+            ExhaustFanRPM   = int(1875000 / int.from_bytes(data[4:6], byteorder='big'))
             publish_message(msg=str(IntakeFanSpeed), mqtt_path='comfoair/intakefanspeed')
             publish_message(msg=str(ExhaustFanSpeed), mqtt_path='comfoair/exhaustfanspeed')
             publish_message(msg=str(IntakeFanRPM), mqtt_path='comfoair/intakefanrpm')
