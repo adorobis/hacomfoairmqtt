@@ -50,6 +50,7 @@ MQTTUser         | MQTT User, if you enabled authorization on your MQTT Server. 
 MQTTPassword     | MQTT User Password, if you enabled authorization on your MQTT Server. Default: False (no authentication)
 refresh_interval | Refresh Interval in Seconds. Default: 10
 enablePcMode     | Automaticly enable PC Mode (disable comfosense). Default: False (disabled)
+RS485_protocol   | Enable RS485 protocol, if false RSS232 is used Default: False (RS232)
 debug            | Enable Debug Output. Default: False (disabled)
 
 

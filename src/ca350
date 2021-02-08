@@ -32,6 +32,7 @@ config.read(os.path.dirname(os.path.abspath(__file__)) + '/config.ini')
 
 # Service Configuration
 SerialPort = config['DEFAULT']['SerialPort']                   # Serial port CA350 RS232 direct or via USB TTL adapter
+RS485_protocol = config['DEFAULT']['RS485_protocol'] == 'False' # Protocol type
 refresh_interval = int(config['DEFAULT']['refresh_interval'])  # Interval in seconds at which data from RS232 will be polled
 enablePcMode = config['DEFAULT']['enablePcMode'] == 'True'     # automatically enable PC Mode (disable comfosense)
 debug = config['DEFAULT']['debug'] == 'True'
@@ -190,13 +191,15 @@ def on_message(client, userdata, message):
             fan_level = 2
     elif message.topic == "comfoair/comforttemp/set":
         comforttemp = int(float(msg_data))
-        set_comfort_temperature(comforttemp)
-        get_temp()
+        if RS485_protocol == False:
+            set_comfort_temperature(comforttemp)
+            get_temp()
     else:
         print("Message "+message.topic+" with message: "+msg_data+" ignored")
     print('FanLevel ' + str(fan_level))
     if 0 <= fan_level <= 4:
-        set_ventilation_level(fan_level)
+        if RS485_protocol == False:
+            set_ventilation_level(fan_level)
 
 def publish_message(msg, mqtt_path):
     try:
@@ -258,12 +261,14 @@ def send_command(command, data, expect_reply=True):
 
     if expect_reply:
         if result:
-            # Increment the command by 1 to get the expected result command
-            result_command_int = int.from_bytes(command, byteorder='big') + 1
+            if RS485_protocol == False:
+                # Increment the command by 1 to get the expected result command for RS232
+                result_command_int = int.from_bytes(command, byteorder='big') + 1
+            else:
+                # Decrement the command by 1 to get the expected result command for RS485
+                result_command_int = int.from_bytes(command, byteorder='big') - 1
             result_command = result_command_int.to_bytes(2, byteorder='big')
-
             filtered_result = filter_and_validate(result, result_command)
-
             if filtered_result:
                 ser.write(b'\x07\xF3')  # Send an ACK after receiving the correct result
                 return filtered_result
@@ -361,7 +366,36 @@ def get_temp():
             SupplyAirTemp = data[2] / 2.0 - 20
             ReturnAirTemp = data[3] / 2.0 - 20
             ExhaustAirTemp = data[4] / 2.0 - 20
+				
             if 10 < ComfortTemp < 30:
+                publish_message(msg=str(ComfortTemp), mqtt_path='comfoair/comforttemp')
+                publish_message(msg=str(OutsideAirTemp), mqtt_path='comfoair/outsidetemp')
+                publish_message(msg=str(SupplyAirTemp), mqtt_path='comfoair/supplytemp')
+                publish_message(msg=str(ExhaustAirTemp), mqtt_path='comfoair/exhausttemp')
+                publish_message(msg=str(ReturnAirTemp), mqtt_path='comfoair/returntemp')
+                debug_msg('OutsideAirTemp: {0}, SupplyAirTemp: {1}, ReturnAirTemp: {2}, ExhaustAirTemp: {3}, ComfortTemp: {4}'.format(OutsideAirTemp, SupplyAirTemp, ReturnAirTemp, ExhaustAirTemp, ComfortTemp))
+            else:
+                warning_msg('get_temp returned bad temp data. Retrying in 2 sec')
+                warning_msg('OutsideAirTemp: {0}, SupplyAirTemp: {1}, ReturnAirTemp: {2}, ExhaustAirTemp: {3}, ComfortTemp: {4}'.format(OutsideAirTemp, SupplyAirTemp, ReturnAirTemp, ExhaustAirTemp, ComfortTemp))
+                time.sleep(2)
+                get_temp()
+        else:
+            warning_msg('get_temp function: incorrect data received')
+
+def get_temp_rs485():
+    data = send_command(b'\x00\x85', None)		
+
+    if data is None:
+        warning_msg('get_temp function could not get serial data')
+    else:
+        if len(data) > 5:
+            ComfortTemp = 0
+            OutsideAirTemp = data[5] / 2.0 - 20
+            SupplyAirTemp = 0
+            ReturnAirTemp = data[4] / 2.0 - 20
+            ExhaustAirTemp = data[3] / 2.0 - 20
+				
+            if 10 < ReturnAirTemp < 30:
                 publish_message(msg=str(ComfortTemp), mqtt_path='comfoair/comforttemp')
                 publish_message(msg=str(OutsideAirTemp), mqtt_path='comfoair/outsidetemp')
                 publish_message(msg=str(SupplyAirTemp), mqtt_path='comfoair/supplytemp')
@@ -449,10 +483,38 @@ def get_fan_status():
             ExhaustFanSpeed = data[1]
             IntakeFanRPM    = int(1875000 / int.from_bytes(data[2:4], byteorder='big'))
             ExhaustFanRPM   = int(1875000 / int.from_bytes(data[4:6], byteorder='big'))
+
             publish_message(msg=str(IntakeFanSpeed), mqtt_path='comfoair/intakefanspeed')
             publish_message(msg=str(ExhaustFanSpeed), mqtt_path='comfoair/exhaustfanspeed')
             publish_message(msg=str(IntakeFanRPM), mqtt_path='comfoair/intakefanrpm')
             publish_message(msg=str(ExhaustFanRPM), mqtt_path='comfoair/exhaustfanrpm')
+            debug_msg('IntakeFanSpeed {0}%, ExhaustFanSpeed {1}%, IntakeAirRPM {2}, ExhaustAirRPM {3}'.format(IntakeFanSpeed, ExhaustFanSpeed, IntakeFanRPM, ExhaustFanRPM))
+        else:
+            warning_msg('function get_fan_status data array too short')
+
+def get_fan_status_rs485():
+    data = send_command(b'\x00\x87', None)
+    if data is None:
+        warning_msg('function get_fan_status could not get serial data')
+    else:
+        if len(data) > 5:
+            IntakeFanSpeed  = data[0]
+            ExhaustFanSpeed = data[1]  
+            IntakeFanRPM    = data[2] * 20
+            ExhaustFanRPM   = data[3] * 20
+            FanLevel        = data[8]
+
+            publish_message(msg=str(IntakeFanSpeed), mqtt_path='comfoair/intakefanspeed')
+            publish_message(msg=str(ExhaustFanSpeed), mqtt_path='comfoair/exhaustfanspeed')
+            publish_message(msg=str(IntakeFanRPM), mqtt_path='comfoair/intakefanrpm')
+            publish_message(msg=str(ExhaustFanRPM), mqtt_path='comfoair/exhaustfanrpm')
+            if FanLevel == 0:
+                publish_message(msg='low', mqtt_path='comfoair/ha_climate_mode/fan')
+            elif FanLevel == 1:
+                publish_message(msg='medium', mqtt_path='comfoair/ha_climate_mode/fan')
+            elif FanLevel == 2:
+                publish_message(msg='high', mqtt_path='comfoair/ha_climate_mode/fan')
+            #Add fanspeed to debug
             debug_msg('IntakeFanSpeed {0}%, ExhaustFanSpeed {1}%, IntakeAirRPM {2}, ExhaustAirRPM {3}'.format(IntakeFanSpeed, ExhaustFanSpeed, IntakeFanRPM, ExhaustFanRPM))
         else:
             warning_msg('function get_fan_status data array too short')
@@ -616,22 +678,26 @@ except:
     warning_msg('Opening serial port exception:')
     warning_msg(sys.exc_info())
 else:
-    if enablePcMode:
-        set_pc_mode(3)
-    else:
-        set_pc_mode(0)  # If PC mode is disabled, deactivate it (in case it was activated in an earlier run)
-
+    if RS485_protocol == False: 
+        if enablePcMode:
+            set_pc_mode(3)
+        else:
+            set_pc_mode(0)  # If PC mode is disabled, deactivate it (in case it was activated in an earlier run)
     mqttc.loop_start()
     while True:
         try:
-    #        get_ventilation_levels()
-    #        set_fan_levels()
-            get_temp()
-            get_ventilation_status()
-            get_filter_status()
-            get_fan_status()
-            get_bypass_status()
-            get_preheating_status()
+            if RS485_protocol == False:
+                #get_ventilation_levels()
+                #set_fan_levels()
+                get_temp()
+                get_fan_status()
+                get_ventilation_status()
+                get_filter_status()
+                get_bypass_status()
+                get_preheating_status()
+            else:
+                get_temp_rs485()
+                get_fan_status_rs485()                
             time.sleep(refresh_interval)
             pass
         except KeyboardInterrupt:

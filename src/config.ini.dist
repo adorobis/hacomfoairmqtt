@@ -1,6 +1,8 @@
 [DEFAULT]
-# Serial port CA350 RS232 direct or via USB TTL adapter
+# Serial port CA350 RS232 / RS485 direct or via USB TTL adapter
 SerialPort=/dev/cuau3
+# Select RS232 or RS485 protocol
+RS485_protocol=False
 # Interval in seconds at which data from RS232 will be polled
 refresh_interval=10
 # automatically enable PC Mode (disable comfosense)
