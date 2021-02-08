@@ -32,7 +32,7 @@ config.read(os.path.dirname(os.path.abspath(__file__)) + '/config.ini')
 
 # Service Configuration
 SerialPort = config['DEFAULT']['SerialPort']                   # Serial port CA350 RS232 direct or via USB TTL adapter
-RS485_protocol = config['DEFAULT']['RS485_protocol'] == 'True' # Protocol type
+RS485_protocol = config['DEFAULT']['RS485_protocol'] == 'False' # Protocol type
 refresh_interval = int(config['DEFAULT']['refresh_interval'])  # Interval in seconds at which data from RS232 will be polled
 enablePcMode = config['DEFAULT']['enablePcMode'] == 'True'     # automatically enable PC Mode (disable comfosense)
 debug = config['DEFAULT']['debug'] == 'True'
