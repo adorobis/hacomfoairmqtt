@@ -710,10 +710,10 @@ def on_connect(client, userdata, flags, rc):
         delete_message("homeassistant/sensor/ca350_filterstatus/config")
         delete_message("homeassistant/sensor/ca350_bypass_valve/config")
         delete_message("homeassistant/sensor/ca350_summer_mode/config")
-	delete_message("homeassistant/sensor/analog_sensor_1/config")
-	delete_message("homeassistant/sensor/analog_sensor_2/config")
-	delete_message("homeassistant/sensor/analog_sensor_3/config")
-	delete_message("homeassistant/sensor/analog_sensor_4/config")
+        delete_message("homeassistant/sensor/analog_sensor_1/config")
+        delete_message("homeassistant/sensor/analog_sensor_2/config")
+        delete_message("homeassistant/sensor/analog_sensor_3/config")
+        delete_message("homeassistant/sensor/analog_sensor_4/config")
     #ToDo: Work in progress
     if HAEnableAutoDiscoveryClimate is True:
         info_msg('Home Assistant MQTT Autodiscovery Topic Set: homeassistant/climate/ca350_climate/config')
