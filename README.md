@@ -78,6 +78,12 @@ sensor.ca350_fan_speed_exhaust | Sensor: Exhaust Fan Speed
 sendor.ca350_return_air_level | *ToDo: Currently exposing Fan Speed - as i am missing this data*
 sensor.ca350_supply_air_level | *ToDo: Currently exposing Fan Speed - as i am missing this data*
 sensor.ca350_supply_fan | Sensor: supply fan
+sensor.ca350_bypass_valve | Sensor: Bypass valve %
+sensor.ca350_summer_mode | Sensor: Summer/Winter mode
+sensor.ca350_analog_sensor_1 | Analog sensor 1 reading %
+sensor.ca350_analog_sensor_2 | Analog sensor 2 reading %
+sensor.ca350_analog_sensor_3 | Analog sensor 3 reading %
+sensor.ca350_analog_sensor_4 | Analog sensor 4 reading %
 binary_sensor.ca350_filterstatus | Binary Sensor: Filterstatus
 binary_sensor.ca350_bypass_valve | Binary Sensor: Bypass valve
 binary_sensor.ca350_summer_mode | Binary Seonsor: Summer Mode
