@@ -87,6 +87,7 @@ sensor.ca350_analog_sensor_4 | Analog sensor 4 reading %
 binary_sensor.ca350_filterstatus | Binary Sensor: Filterstatus
 binary_sensor.ca350_bypass_valve | Binary Sensor: Bypass valve
 binary_sensor.ca350_summer_mode | Binary Seonsor: Summer Mode
+binary_sensor.ca350_preheatingstatus | Binary Sensor: is preheating active?
 
 ### Configuration: HAEnableAutoDiscoveryClimate = False 
 Adding the Comfoair as an HAVC makes sense, since it has a temperature control and a fan.
