@@ -43,10 +43,8 @@ MQTTKeepalive = int(config['MQTT']['MQTTKeepalive']) # MQTT broker - keepalive
 MQTTUser = config['MQTT']['MQTTUser']                # MQTT broker - user - default: 0 (disabled/no authentication)
 MQTTPassword = config['MQTT']['MQTTPassword']        # MQTT broker - password - default: 0 (disabled/no authentication)
 
-HAEnableAutoDiscoveryFan = config['HA']['HAEnableAutoDiscoveryFan'] == 'False'         # Home Assistant send auto discovery for fan. Fan not needed as all features available in climate entity
 HAEnableAutoDiscoverySensors = config['HA']['HAEnableAutoDiscoverySensors'] == 'True' # Home Assistant send auto discovery for temperatures
-#Todo: HA AD Climate is work in progress
-HAEnableAutoDiscoveryClimate = config['HA']['HAEnableAutoDiscoveryClimate'] == 'True' # Work in Progress: Home Assistant send auto discovery for climate
+HAEnableAutoDiscoveryClimate = config['HA']['HAEnableAutoDiscoveryClimate'] == 'True' # Home Assistant send auto discovery for climate
 
 
 print("*****************************")
@@ -159,34 +157,12 @@ def on_message(client, userdata, message):
             fan_level = 4
         else:
             print("comfoair/ha_climate_mode/fan/set got unkown value "+msg_data)
-    elif message.topic == "comfoair/speed/set":
-        selector = msg_data
-        if selector == "10":
-            print("comfoair/speed/set is 10")
-            fan_level = 1
-        elif "20" == selector:
-            print("comfoair/speed/set is 20")
-            fan_level = 2
-        elif "30" == selector:
-            print("comfoair/speed/set is 30")
-            fan_level = 3
-        elif "40" == selector:
-            print("comfoair/speed/set is 40")
-            fan_level = 4
     elif message.topic == "comfoair/ha_climate_mode/set":
         selector = msg_data
         if selector == "off":
             print("comfoair/on/set is 10")
             fan_level = 1
         elif selector == "fan_only":
-            print("comfoair/on/set is 20")
-            fan_level = 2
-    elif message.topic == "comfoair/on/set":
-        selector = msg_data
-        if selector == "10":
-            print("comfoair/on/set is 10")
-            fan_level = 1
-        elif selector == "20":
             print("comfoair/on/set is 20")
             fan_level = 2
     elif message.topic == "comfoair/comforttemp/set":
@@ -445,13 +421,9 @@ def get_ventilation_status():
             debug_msg('ReturnAirLevel: {}, SupplyAirLevel: {}, FanLevel: {}, IntakeFanActive: {}'.format(ReturnAirLevel, SupplyAirLevel, FanLevel, StrIntakeFanActive))
 
             if FanLevel == 1:
-                publish_message(msg='10', mqtt_path='comfoair/on/state')
                 publish_message(msg='off', mqtt_path='comfoair/ha_climate_mode')
                 publish_message(msg='off', mqtt_path='comfoair/ha_climate_mode/fan')
-                publish_message(msg='20', mqtt_path='comfoair/speed/state')
             elif FanLevel == 2 or FanLevel == 3 or FanLevel == 4:
-                publish_message(msg=str(FanLevel*10), mqtt_path='comfoair/speed/state')
-                publish_message(msg='20', mqtt_path='comfoair/on/state')
                 publish_message(msg='fan_only', mqtt_path='comfoair/ha_climate_mode')
                 if FanLevel == 2:
                   publish_message(msg='low', mqtt_path='comfoair/ha_climate_mode/fan')
@@ -589,8 +561,6 @@ def get_fan_status_rs485():
             publish_message(msg=str(IntakeFanRPM), mqtt_path='comfoair/intakefanrpm')
             publish_message(msg=str(ExhaustFanRPM), mqtt_path='comfoair/exhaustfanrpm')
 
-            publish_message(msg=str(FanLevel*10), mqtt_path='comfoair/speed/state')
-            publish_message(msg='20', mqtt_path='comfoair/on/state')
             publish_message(msg='fan_only', mqtt_path='comfoair/ha_climate_mode')
             if FanLevel == 1:
               publish_message(msg='low', mqtt_path='comfoair/ha_climate_mode/fan')
@@ -661,10 +631,6 @@ def recon():
 
 def topic_subscribe():
     try:
-        mqttc.subscribe("comfoair/on/set", 0)
-        info_msg('Successfull subscribed to the comfoair/on/set topic')
-        mqttc.subscribe("comfoair/speed/set", 0)
-        info_msg('Successfull subscribed to the comfoair/speed/set topic')
         mqttc.subscribe("comfoair/comforttemp/set", 0)
         info_msg('Successfull subscribed to the comfoair/comforttemp/set topic')
         mqttc.subscribe("comfoair/ha_climate_mode/set", 0)
@@ -678,11 +644,9 @@ def topic_subscribe():
 
 def on_connect(client, userdata, flags, rc):
     publish_message("online","comfoair/status")
-    if HAEnableAutoDiscoveryFan is True :
-        info_msg('Home Assistant MQTT Autodiscovery Topic Set: homeassistant/fan/ca350_fan/config')
-        publish_message('{"name":"ca350_fan","avty_t":"comfoair/status","pl_avail":"online","pl_not_avail":"offline","stat_t": "comfoair/on/state","cmd_t": "comfoair/on/set","spd_stat_t": "comfoair/speed/state","spd_cmd_t": "comfoair/speed/set","pl_on": "20","pl_off": "10","pl_lo_spd": "20","pl_med_spd": "30","pl_hi_spd": "40","spds": ["off","low","medium","high"]}',"homeassistant/fan/ca350_fan/config")
-    else:
-        delete_message("homeassistant/fan/ca350_fan/config")
+	# Temporary: deletion of old topic for Fan entity auto discovery
+    delete_message("homeassistant/fan/ca350_fan/config")
+	
     if HAEnableAutoDiscoverySensors is True :
         info_msg('Home Assistant MQTT Autodiscovery Topic Set: homeassistant/sensor/ca350_[nametemp]/config')
         publish_message('{"name":"ca350_outsidetemp","avty_t":"comfoair/status","pl_avail":"online","pl_not_avail":"offline","device_class":"temperature","state_topic":"comfoair/outsidetemp","unit_of_measurement":"°C"}',"homeassistant/sensor/ca350_outsidetemp/config")
