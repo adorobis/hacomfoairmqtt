@@ -22,8 +22,6 @@ MQTTUser=
 MQTTPassword=
 
 [HA]
-# Home Assistant send auto discovery for fan
-HAEnableAutoDiscoveryFan=False
 # Home Assistant send auto discovery for temperatures
 HAEnableAutoDiscoverySensors=True
 #Todo: HA AD Climate is work in progress
