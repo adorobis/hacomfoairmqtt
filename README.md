@@ -59,12 +59,6 @@ If you are using MQTT in Home Assistant, you will probably have the Auto Discove
 
 If you enable Autodiscovery in this Service, you will get following entities:
 
-### Configuration: HAEnableAutoDiscoveryFan = True
-
-Entity Name | Description
------------- | -------------
-fan.ca350_fan | This will enable the fan described in the configuration.yaml example
-
 ### Configuration: HAEnableAutoDiscoverySensors = True 
 
 Entity Name | Sensor/Binary Sensor
@@ -92,8 +86,6 @@ binary_sensor.ca350_preheatingstatus | Binary Sensor: is preheating active?
 ### Configuration: HAEnableAutoDiscoveryClimate = False 
 Adding the Comfoair as an HAVC makes sense, since it has a temperature control and a fan.
 
-*This is still a work in progress*
-
 Entity Name | Description
 ------------ | -------------
 climate.ca350_fan | Expose Temperature Control & Fan Control
@@ -109,7 +101,6 @@ The following Lovelace widgets depend on the MQTT AD enities and can be used wit
 - [ ] venv
 - [ ] dependencies and the service. 
 - [ ] Installation description for Debian based Linux Systems
-- [ ] Correct implementation of climate
 - [ ] Full Control in Home Assistant with a single Widget (Fan Speed, Temperature)
 - [ ] React on input immediatly - Still Read on Interval Status
 - [ ] Implement set_fan_levels() based on values from MQTT (e.g. input_numbers in HA) to set the fan levels for all modes. Also enables setting intake or exhaust fans only as in original controller.
