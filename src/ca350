@@ -25,6 +25,7 @@ import serial
 import sys
 import configparser
 import os
+import json
 
 # Read configuration from ini file
 config = configparser.ConfigParser()
@@ -45,6 +46,13 @@ MQTTPassword = config['MQTT']['MQTTPassword']        # MQTT broker - password - 
 
 HAEnableAutoDiscoverySensors = config['HA']['HAEnableAutoDiscoverySensors'] == 'True' # Home Assistant send auto discovery for temperatures
 HAEnableAutoDiscoveryClimate = config['HA']['HAEnableAutoDiscoveryClimate'] == 'True' # Home Assistant send auto discovery for climate
+
+HAAutoDiscoveryDeviceName = config['HA']['HAAutoDiscoveryDeviceName']            # Home Assistant Device Name
+
+# Used for Home Assistant device discovery
+HAAutoDiscoveryDeviceId = config['HA']['HAAutoDiscoveryDeviceId']     # Home Assistant Unique Id
+HAAutoDiscoveryDeviceManufacturer = config['HA']['HAAutoDiscoveryDeviceManufacturer']
+HAAutoDiscoveryDeviceModel = config['HA']['HAAutoDiscoveryDeviceModel']
 
 
 print("*****************************")
@@ -642,32 +650,134 @@ def topic_subscribe():
         time.sleep(10)
         topic_subscribe()
 
+def send_autodiscover(name, entity_id, entity_type, state_topic, device_class = None, unit_of_measurement = None, icon = None):
+    mqtt_config_topic = "homeassistant/" + entity_type + "/" + entity_id + "/config"
+    sensor_unique_id = HAAutoDiscoveryDeviceId + "-" + entity_id
+
+    discovery_message = {
+        "name": HAAutoDiscoveryDeviceName + " " + name,
+        "availability_topic":"comfoair/status",
+        "payload_available":"online",
+        "payload_not_available":"offline",
+        "state_topic": state_topic,
+        "unique_id": sensor_unique_id,
+        "device": {
+            "identifiers":[
+                HAAutoDiscoveryDeviceId
+            ],
+            "name": HAAutoDiscoveryDeviceName,
+            "manufacturer": HAAutoDiscoveryDeviceManufacturer,
+            "model": HAAutoDiscoveryDeviceModel
+        }
+    }
+    if unit_of_measurement:
+        discovery_message["unit_of_measurement"] = unit_of_measurement
+
+    if device_class:
+        discovery_message["device_class"] = device_class
+
+    if icon:
+        discovery_message["icon"] = icon
+
+    mqtt_message = json.dumps(discovery_message)
+    
+    debug_msg('Sending autodiscover for ' + mqtt_config_topic)
+    publish_message(mqtt_message, mqtt_config_topic)
+
 def on_connect(client, userdata, flags, rc):
     publish_message("online","comfoair/status")
 	# Temporary: deletion of old topic for Fan entity auto discovery
     delete_message("homeassistant/fan/ca350_fan/config")
 	
-    if HAEnableAutoDiscoverySensors is True :
+    if HAEnableAutoDiscoverySensors is True:
         info_msg('Home Assistant MQTT Autodiscovery Topic Set: homeassistant/sensor/ca350_[nametemp]/config')
-        publish_message('{"name":"ca350_outsidetemp","avty_t":"comfoair/status","pl_avail":"online","pl_not_avail":"offline","device_class":"temperature","state_topic":"comfoair/outsidetemp","unit_of_measurement":"°C"}',"homeassistant/sensor/ca350_outsidetemp/config")
-        publish_message('{"name":"ca350_supplytemp","avty_t":"comfoair/status","pl_avail":"online","pl_not_avail":"offline","device_class":"temperature","state_topic":"comfoair/supplytemp","unit_of_measurement":"°C"}',"homeassistant/sensor/ca350_supplytemp/config")
-        publish_message('{"name":"ca350_exhausttemp","avty_t":"comfoair/status","pl_avail":"online","pl_not_avail":"offline","device_class":"temperature","state_topic":"comfoair/exhausttemp","unit_of_measurement":"°C"}',"homeassistant/sensor/ca350_exhausttemp/config")
-        publish_message('{"name":"ca350_returntemp","avty_t":"comfoair/status","pl_avail":"online","pl_not_avail":"offline","device_class":"temperature","state_topic":"comfoair/returntemp","unit_of_measurement":"°C"}',"homeassistant/sensor/ca350_returntemp/config")
-        publish_message('{"name":"ca350_fan_speed_supply","avty_t":"comfoair/status","pl_avail":"online","pl_not_avail":"offline","state_topic":"comfoair/intakefanrpm","unit_of_measurement":"rpm"}',"homeassistant/sensor/ca350_fan_speed_supply/config")
-        publish_message('{"name":"ca350_fan_speed_exhaust","avty_t":"comfoair/status","pl_avail":"online","pl_not_avail":"offline","state_topic":"comfoair/exhaustfanrpm","unit_of_measurement":"rpm"}',"homeassistant/sensor/ca350_fan_speed_exhaust/config")
-        publish_message('{"name":"ca350_return_air_level","avty_t":"comfoair/status","pl_avail":"online","pl_not_avail":"offline","state_topic":"comfoair/intakefanspeed","unit_of_measurement":"%"}',"homeassistant/sensor/ca350_return_air_level/config")
-        publish_message('{"name":"ca350_supply_air_level","avty_t":"comfoair/status","pl_avail":"online","pl_not_avail":"offline","state_topic":"comfoair/exhaustfanspeed","unit_of_measurement":"%"}',"homeassistant/sensor/ca350_supply_air_level/config")
-        publish_message('{"name":"ca350_supply_fan","avty_t":"comfoair/status","pl_avail":"online","pl_not_avail":"offline","state_topic":"comfoair/state"}',"homeassistant/sensor/ca350_supply_fan/config")
-        publish_message('{"name":"ca350_filterstatus","avty_t":"comfoair/status","pl_avail":"online","pl_not_avail":"offline","state_topic":"comfoair/filterstatus_binary"}',"homeassistant/binary_sensor/ca350_filterstatus/config")
-        publish_message('{"name":"ca350_bypass_valve","avty_t":"comfoair/status","pl_avail":"online","pl_not_avail":"offline","state_topic":"comfoair/ca350_bypass_valve"}',"homeassistant/binary_sensor/ca350_bypass_valve/config")
-        publish_message('{"name":"ca350_summer_mode","avty_t":"comfoair/status","pl_avail":"online","pl_not_avail":"offline","state_topic":"comfoair/ca350_summer_mode"}',"homeassistant/binary_sensor/ca350_summer_mode/config")
-        publish_message('{"name":"ca350_bypass_valve","avty_t":"comfoair/status","pl_avail":"online","pl_not_avail":"offline","state_topic":"comfoair/bypassstatus", "unit_of_measurement":"%"}',"homeassistant/sensor/ca350_bypass_valve/config")
-        publish_message('{"name":"ca350_summer_mode","avty_t":"comfoair/status","pl_avail":"online","pl_not_avail":"offline","state_topic":"comfoair/bypassmode"}',"homeassistant/sensor/ca350_summer_mode/config")
-        publish_message('{"name":"ca350_preheatingstatus","avty_t":"comfoair/status","pl_avail":"online","pl_not_avail":"offline","state_topic":"comfoair/preheatingstatus"}',"homeassistant/binary_sensor/ca350_preheatingstatus/config")
-        publish_message('{"name":"ca350_analog_sensor_1","avty_t":"comfoair/status","pl_avail":"online","pl_not_avail":"offline","state_topic":"comfoair/analog_sensor_1","unit_of_measurement":"%"}',"homeassistant/sensor/ca350_analog_sensor_1/config")
-        publish_message('{"name":"ca350_analog_sensor_2","avty_t":"comfoair/status","pl_avail":"online","pl_not_avail":"offline","state_topic":"comfoair/analog_sensor_2","unit_of_measurement":"%"}',"homeassistant/sensor/ca350_analog_sensor_2/config")
-        publish_message('{"name":"ca350_analog_sensor_3","avty_t":"comfoair/status","pl_avail":"online","pl_not_avail":"offline","state_topic":"comfoair/analog_sensor_3","unit_of_measurement":"%"}',"homeassistant/sensor/ca350_analog_sensor_3/config")
-        publish_message('{"name":"ca350_analog_sensor_4","avty_t":"comfoair/status","pl_avail":"online","pl_not_avail":"offline","state_topic":"comfoair/analog_sensor_4","unit_of_measurement":"%"}',"homeassistant/sensor/ca350_analog_sensor_4/config")
+
+        # Temperature readings
+        send_autodiscover(
+            name="Outside temperature", entity_id="ca350_outsidetemp", entity_type="sensor",
+            state_topic="comfoair/outsidetemp", device_class="temperature", unit_of_measurement="°C"
+        )
+        send_autodiscover(
+            name="Supply temperature", entity_id="ca350_supplytemp", entity_type="sensor",
+            state_topic="comfoair/supplytemp", device_class="temperature", unit_of_measurement="°C"
+        )
+        send_autodiscover(
+            name="Exhaust temperature", entity_id="ca350_exhausttemp", entity_type="sensor",
+            state_topic="comfoair/exhausttemp", device_class="temperature", unit_of_measurement="°C"
+        )
+        send_autodiscover(
+            name="Return temperature", entity_id="ca350_returntemp", entity_type="sensor",
+            state_topic="comfoair/returntemp", device_class="temperature", unit_of_measurement="°C"
+        )
+
+        # Analog sensors
+        send_autodiscover(
+            name="Analog sensor 1", entity_id="ca350_analog_sensor_1", entity_type="sensor",
+            state_topic="comfoair/analog_sensor_1", unit_of_measurement="%", icon="mdi:gauge"
+        )
+        send_autodiscover(
+            name="Analog sensor 2", entity_id="ca350_analog_sensor_2", entity_type="sensor",
+            state_topic="comfoair/analog_sensor_2", unit_of_measurement="%", icon="mdi:gauge"
+        )
+        send_autodiscover(
+            name="Analog sensor 3", entity_id="ca350_analog_sensor_3", entity_type="sensor",
+            state_topic="comfoair/analog_sensor_3", unit_of_measurement="%", icon="mdi:gauge"
+        )
+        send_autodiscover(
+            name="Analog sensor 4", entity_id="ca350_analog_sensor_4", entity_type="sensor",
+            state_topic="comfoair/analog_sensor_4", unit_of_measurement="%", icon="mdi:gauge"
+        )
+
+        # Fan speeds
+        send_autodiscover(
+            name="Supply fan speed", entity_id="ca350_fan_speed_supply", entity_type="sensor",
+            state_topic="comfoair/intakefanrpm", unit_of_measurement="rpm", icon="mdi:fan"
+        )
+        send_autodiscover(
+            name="Exhaust fan speed", entity_id="ca350_fan_speed_exhaust", entity_type="sensor",
+            state_topic="comfoair/exhaustfanrpm", unit_of_measurement="rpm", icon="mdi:fan"
+        )
+
+        send_autodiscover(
+            name="Supply air level", entity_id="ca350_supply_air_level", entity_type="sensor",
+            state_topic="comfoair/intakefanspeed", unit_of_measurement="%", icon="mdi:fan"
+        )
+        send_autodiscover(
+            name="Return air level", entity_id="ca350_return_air_level", entity_type="sensor",
+            state_topic="comfoair/exhaustfanspeed", unit_of_measurement="%", icon="mdi:fan"
+        )
+
+        # Filter
+        send_autodiscover(
+            name="Filter status", entity_id="ca350_filterstatus", entity_type="binary_sensor",
+            state_topic="comfoair/filterstatus_binary", device_class="problem", icon="mdi:air-filter"
+        )
+       
+        # Bypass valve
+        send_autodiscover(
+            name="Bypass valve", entity_id="ca350_bypass_valve", entity_type="binary_sensor",
+            state_topic="comfoair/ca350_bypass_valve", device_class="opening"
+        )
+        send_autodiscover(
+            name="Bypass valve", entity_id="ca350_bypass_valve", entity_type="binary_sensor",
+            state_topic="comfoair/bypassstatus", unit_of_measurement="%", icon="mdi:valve"
+        )
+        
+        # Summer mode
+        send_autodiscover(
+            name="Summer mode", entity_id="ca350_summer_mode", entity_type="binary_sensor",
+            state_topic="comfoair/ca350_summer_mode", icon="mdi:sun-snowflake"
+        )
+        send_autodiscover(
+            name="Summer mode", entity_id="ca350_summer_mode", entity_type="sensor",
+            state_topic="comfoair/bypassmode", icon="mdi:sun-snowflake"
+        )
+        
+        
+        send_autodiscover(
+            name="Preheating status", entity_id="ca350_preheatingstatus", entity_type="binary_sensor",
+            state_topic="comfoair/preheatingstatus", device_class="heat"
+        )
     else:
         delete_message("homeassistant/sensor/ca350_outsidetemp/config")
         delete_message("homeassistant/sensor/ca350_supplytemp/config")
