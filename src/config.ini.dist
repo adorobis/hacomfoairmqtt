@@ -30,10 +30,10 @@ HAEnableAutoDiscoveryClimate=True
 
 # Home Assistant Device Discovery
 # Unique device ID (change this to be unique if running multiple instances)
-HAAutoDiscoveryDeviceId=comfoair
+HAAutoDiscoveryDeviceId=ca350
 
 # Device name shown in the frontend
-HAAutoDiscoveryDeviceName=ComfoAir
+HAAutoDiscoveryDeviceName=CA350
 
 # Device manufacturer shown in device info
 HAAutoDiscoveryDeviceManufacturer=Zehnder
