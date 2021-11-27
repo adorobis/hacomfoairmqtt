@@ -650,7 +650,7 @@ def topic_subscribe():
         time.sleep(10)
         topic_subscribe()
 
-def send_autodiscover(name, entity_id, entity_type, state_topic, device_class = None, unit_of_measurement = None, icon = None):
+def send_autodiscover(name, entity_id, entity_type, state_topic = None, device_class = None, unit_of_measurement = None, icon = None, attributes = {}):
     mqtt_config_topic = "homeassistant/" + entity_type + "/" + entity_id + "/config"
     sensor_unique_id = HAAutoDiscoveryDeviceId + "-" + entity_id
 
@@ -659,7 +659,6 @@ def send_autodiscover(name, entity_id, entity_type, state_topic, device_class = 
         "availability_topic":"comfoair/status",
         "payload_available":"online",
         "payload_not_available":"offline",
-        "state_topic": state_topic,
         "unique_id": sensor_unique_id,
         "device": {
             "identifiers":[
@@ -670,6 +669,9 @@ def send_autodiscover(name, entity_id, entity_type, state_topic, device_class = 
             "model": HAAutoDiscoveryDeviceModel
         }
     }
+    if state_topic:
+        discovery_message["state_topic"] = state_topic
+
     if unit_of_measurement:
         discovery_message["unit_of_measurement"] = unit_of_measurement
 
@@ -678,6 +680,10 @@ def send_autodiscover(name, entity_id, entity_type, state_topic, device_class = 
 
     if icon:
         discovery_message["icon"] = icon
+    
+    if len(attributes) > 0:
+        for attribute_key, attribute_value in attributes.items():
+            discovery_message[attribute_key] = attribute_value
 
     mqtt_message = json.dumps(discovery_message)
     
@@ -759,7 +765,7 @@ def on_connect(client, userdata, flags, rc):
             state_topic="comfoair/ca350_bypass_valve", device_class="opening"
         )
         send_autodiscover(
-            name="Bypass valve", entity_id="ca350_bypass_valve", entity_type="binary_sensor",
+            name="Bypass valve", entity_id="ca350_bypass_valve", entity_type="sensor",
             state_topic="comfoair/bypassstatus", unit_of_measurement="%", icon="mdi:valve"
         )
         
@@ -801,7 +807,24 @@ def on_connect(client, userdata, flags, rc):
     #ToDo: Work in progress
     if HAEnableAutoDiscoveryClimate is True:
         info_msg('Home Assistant MQTT Autodiscovery Topic Set: homeassistant/climate/ca350_climate/config')
-        publish_message('{"name":"ca350_climate","avty_t":"comfoair/status","pl_avail":"online","pl_not_avail":"offline","temp_cmd_t":"comfoair/comforttemp/set","temp_stat_t":"comfoair/comforttemp","curr_temp_t":"comfoair/supplytemp","min_temp":"15","max_temp":"27","temp_step":"1","modes":["off", "fan_only"],"mode_state_topic":"comfoair/ha_climate_mode","mode_command_topic":"comfoair/ha_climate_mode/set","fan_modes":["off", "low", "medium", "high"],"fan_mode_state_topic":"comfoair/ha_climate_mode/fan","fan_mode_command_topic":"comfoair/ha_climate_mode/fan/set","temperature_unit":"C"}',"homeassistant/climate/ca350_climate/config")
+        send_autodiscover(
+            name="Climate", entity_id="ca350_climate", entity_type="climate",
+            attributes={
+                "temperature_command_topic":"comfoair/comforttemp/set",
+                "temperature_state_topic":"comfoair/comforttemp",
+                "current_temperature_topic":"comfoair/supplytemp",
+                "min_temp":"15",
+                "max_temp":"27",
+                "temp_step":"1",
+                "modes":["off", "fan_only"],
+                "mode_state_topic":"comfoair/ha_climate_mode",
+                "mode_command_topic":"comfoair/ha_climate_mode/set",
+                "fan_modes":["off", "low", "medium", "high"],
+                "fan_mode_state_topic":"comfoair/ha_climate_mode/fan",
+                "fan_mode_command_topic":"comfoair/ha_climate_mode/fan/set",
+                "temperature_unit":"C"
+            }
+        )
     else:
         delete_message("homeassistant/climate/ca350_climate/config")
     topic_subscribe()
