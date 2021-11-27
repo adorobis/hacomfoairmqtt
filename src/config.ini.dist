@@ -22,9 +22,15 @@ MQTTUser=
 MQTTPassword=
 
 [HA]
-# Home Assistant send auto discovery for temperatures
+# Home Assistant sensor auto discovery
 HAEnableAutoDiscoverySensors=True
-#Todo: HA AD Climate is work in progress
-# Work in Progress: Home Assistant send auto discovery for climate
+
+# Home Assistant climate auto discovery
 HAEnableAutoDiscoveryClimate=True
+
+# Home Assistant Device Discovery
+HAAutoDiscoveryDeviceId=comfoair # Unique device ID (change this to be unique if running multiple instances)
+HAAutoDiscoveryDeviceName=ComfoAir # Device name shown in the frontend
+HAAutoDiscoveryDeviceManufacturer=Zehnder # Device manufacturer shown in device info
+HAAutoDiscoveryDeviceModel=ComfoAir 350 # Device model shown in device info
 
