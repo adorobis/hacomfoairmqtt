@@ -59,12 +59,6 @@ If you are using MQTT in Home Assistant, you will probably have the Auto Discove
 
 If you enable Autodiscovery in this Service, you will get following entities:
 
-### Configuration: HAEnableAutoDiscoveryFan = True
-
-Entity Name | Description
------------- | -------------
-fan.ca350_fan | This will enable the fan described in the configuration.yaml example
-
 ### Configuration: HAEnableAutoDiscoverySensors = True 
 
 Entity Name | Sensor/Binary Sensor
@@ -78,14 +72,19 @@ sensor.ca350_fan_speed_exhaust | Sensor: Exhaust Fan Speed
 sendor.ca350_return_air_level | *ToDo: Currently exposing Fan Speed - as i am missing this data*
 sensor.ca350_supply_air_level | *ToDo: Currently exposing Fan Speed - as i am missing this data*
 sensor.ca350_supply_fan | Sensor: supply fan
+sensor.ca350_bypass_valve | Sensor: Bypass valve %
+sensor.ca350_summer_mode | Sensor: Summer/Winter mode
+sensor.ca350_analog_sensor_1 | Analog sensor 1 reading %
+sensor.ca350_analog_sensor_2 | Analog sensor 2 reading %
+sensor.ca350_analog_sensor_3 | Analog sensor 3 reading %
+sensor.ca350_analog_sensor_4 | Analog sensor 4 reading %
 binary_sensor.ca350_filterstatus | Binary Sensor: Filterstatus
 binary_sensor.ca350_bypass_valve | Binary Sensor: Bypass valve
 binary_sensor.ca350_summer_mode | Binary Seonsor: Summer Mode
+binary_sensor.ca350_preheatingstatus | Binary Sensor: is preheating active?
 
 ### Configuration: HAEnableAutoDiscoveryClimate = False 
 Adding the Comfoair as an HAVC makes sense, since it has a temperature control and a fan.
-
-*This is still a work in progress*
 
 Entity Name | Description
 ------------ | -------------
@@ -102,7 +101,6 @@ The following Lovelace widgets depend on the MQTT AD enities and can be used wit
 - [ ] venv
 - [ ] dependencies and the service. 
 - [ ] Installation description for Debian based Linux Systems
-- [ ] Correct implementation of climate
 - [ ] Full Control in Home Assistant with a single Widget (Fan Speed, Temperature)
 - [ ] React on input immediatly - Still Read on Interval Status
 - [ ] Implement set_fan_levels() based on values from MQTT (e.g. input_numbers in HA) to set the fan levels for all modes. Also enables setting intake or exhaust fans only as in original controller.
