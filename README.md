@@ -102,7 +102,7 @@ Adding the Comfoair as an HAVC makes sense, since it has a temperature control a
 
 Entity Name | Description
 ------------ | -------------
-climate.ca350_fan | Expose Temperature Control & Fan Control
+climate.ca350_climate | Expose Comfort Temperature Control & Fan Control
 
 ## HA Lovelace Widget:
 The following Lovelace widgets depend on the MQTT AD enities and can be used with this service:
