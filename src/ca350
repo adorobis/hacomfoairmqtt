@@ -533,6 +533,7 @@ def get_temp_rs485():
     else:
         if len(data) > 5:
             SupplyAirTemp = 0 #dummy value because it is not available
+            SummerMode = 0 #dummy value because it is not available
             BypassStatus = data[0]
             #data[1:2] unknown, seems like status info
             ExhaustAirTemp = data[3] / 2.0 - 20
@@ -540,8 +541,17 @@ def get_temp_rs485():
             OutsideAirTemp = data[5] / 2.0 - 20
             #data[6:7] optional temperature sensors?
             #data[8:9] unknown, seems like status info
-				
             publish_message(msg=str(BypassStatus), mqtt_path='comfoair/bypassstatus')
+            if BypassStatus == 0:
+                publish_message(msg='OFF', mqtt_path='comfoair/ca350_bypass_valve')
+            else:
+                publish_message(msg='ON', mqtt_path='comfoair/ca350_bypass_valve')
+            if SummerMode == 1:
+                publish_message(msg='Summer', mqtt_path='comfoair/bypassmode')
+                publish_message(msg='ON', mqtt_path='comfoair/ca350_summer_mode')
+            else:
+                publish_message(msg='Winter', mqtt_path='comfoair/bypassmode')
+                publish_message(msg='OFF', mqtt_path='comfoair/ca350_summer_mode')			
             publish_message(msg=str(OutsideAirTemp), mqtt_path='comfoair/outsidetemp')
             publish_message(msg=str(SupplyAirTemp), mqtt_path='comfoair/supplytemp')
             publish_message(msg=str(ExhaustAirTemp), mqtt_path='comfoair/exhausttemp')
