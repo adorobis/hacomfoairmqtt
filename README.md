@@ -57,39 +57,52 @@ debug            | Enable Debug Output. Default: False (disabled)
 ## MQTT Auto Discovery Configutation:
 If you are using MQTT in Home Assistant, you will probably have the Auto Discovery enabled by default. The MQTT AD implementation is expected to run with the prefix "homeassistant/". 
 
-If you enable Autodiscovery in this Service, you will get following entities:
 
-### Configuration: HAEnableAutoDiscoveryFan = True
-
-Entity Name | Description
------------- | -------------
-fan.ca350_fan | This will enable the fan described in the configuration.yaml example
 
 ### Configuration: HAEnableAutoDiscoverySensors = True 
-
-Entity Name | Sensor/Binary Sensor
+Configuration Name | Description
 ------------ | -------------
-sensor.ca350_outsidetemp | Sensor: Outside Temperature 
-sensor.ca350_supplytemp | Sensor: Supply Temperature
-sensor.ca350_exhausttemp | Sensor: Exhaust Temperature
-sensor.ca350_returntemp | Sensor: Return Temperatur
-sensor.ca350_fan_speed_supply | Sensor: Supply Fan Speed
-sensor.ca350_fan_speed_exhaust | Sensor: Exhaust Fan Speed
-sendor.ca350_return_air_level | *ToDo: Currently exposing Fan Speed - as i am missing this data*
-sensor.ca350_supply_air_level | *ToDo: Currently exposing Fan Speed - as i am missing this data*
-sensor.ca350_supply_fan | Sensor: supply fan
-binary_sensor.ca350_filterstatus | Binary Sensor: Filterstatus
-binary_sensor.ca350_bypass_valve | Binary Sensor: Bypass valve
-binary_sensor.ca350_summer_mode | Binary Seonsor: Summer Mode
+HAEnableAutoDiscoverySensors | Enable Home Assistant Auto Discovery
+HAAutoDiscoveryDeviceId | Unique ID to use for Home Assistant Device Discovery
+HAAutoDiscoveryDeviceName | Device name to show in the Home Assistant frontend
+HAAutoDiscoveryDeviceManufacturer | Device manufacturer to show in the Home Assistant frontend
+HAAutoDiscoveryDeviceModel | Device model to show in the Home Assistant frontend
+
+
+
+If you enable Autodiscovery in this Service, you will get following entities:
+The entity id consists of the `HAAutoDiscoveryDeviceName` and the Entity Name.
+
+Entity Type | Entity Name | Unit | Description
+------------| ----------- | ---- | -------------
+sensor | Analog sensor 1 | % | Analog reading for accesories, eg: Comfosense CO2 sensor
+sensor | Analog sensor 2 | % | Analog reading for accesories, eg: Comfosense CO2 sensor
+sensor | Analog sensor 3 | % | Analog reading for accesories, eg: Comfosense CO2 sensor
+sensor | Analog sensor 4 | % | Analog reading for accesories, eg: Comfosense CO2 sensor
+sensor | Bypass valve    | % | Bypass valve value: 0 % = Closed, 100 % = Open
+sensor | Return air level | % | Fan level for exhaust fan
+sensor | Supply air level | % | Fan level for supply fan
+sensor | Exhaust fan speed | rpm | Fan rotation speed for exhaust fan
+sensor | Supply fan speed | rpm | Fan rotation speed for supply fan
+sensor | Outside temperature | °C | Air temperature from outside
+sensor | Supply temperature | °C | Air temperature supplied to the house
+sensor | Return temperature | °C | Air temperature extracted from the house 
+sensor | Exhaust temperature | °C | Air temperature going outside
+sensor | Summer mode | | Current climate mode: `Summer` means cooling via bypass at nighttime, `Winter` means bypass always closed
+binary_sensor | Summer mode | | Current climate mode: `On` means cooling via bypass at nighttime, `Off` means bypass always closed
+binary_sensor | Preheating status | | Whether the unit is preheating the air before it enters the heat exchanger.
+binary_sensor | Bypass valve | | State of the bypass valve
+binary_sensor | Filter status | | Whether or not the air filters need cleaning / replacing
+
+
+
 
 ### Configuration: HAEnableAutoDiscoveryClimate = False 
 Adding the Comfoair as an HAVC makes sense, since it has a temperature control and a fan.
 
-*This is still a work in progress*
-
 Entity Name | Description
 ------------ | -------------
-climate.ca350_fan | Expose Temperature Control & Fan Control
+climate.ca350_climate | Expose Comfort Temperature Control & Fan Control
 
 ## HA Lovelace Widget:
 The following Lovelace widgets depend on the MQTT AD enities and can be used with this service:
@@ -102,7 +115,6 @@ The following Lovelace widgets depend on the MQTT AD enities and can be used wit
 - [ ] venv
 - [ ] dependencies and the service. 
 - [ ] Installation description for Debian based Linux Systems
-- [ ] Correct implementation of climate
 - [ ] Full Control in Home Assistant with a single Widget (Fan Speed, Temperature)
 - [ ] React on input immediatly - Still Read on Interval Status
 - [ ] Implement set_fan_levels() based on values from MQTT (e.g. input_numbers in HA) to set the fan levels for all modes. Also enables setting intake or exhaust fans only as in original controller.
