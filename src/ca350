@@ -508,17 +508,17 @@ def get_filter_status():
         warning_msg('get_filter_status function could not get serial data')
     else:
         if len(data) > 16:
-            if data[11] == 0:
+            if data[8] == 0:
                 FilterStatus = 'Ok'
-                FilterStatusBinary = 1
-            elif data[11] == 1:
+                FilterStatusBinary = 'OFF'
+            elif data[8] == 1:
                 FilterStatus = 'Full'
-                FilterStatusBinary = 0
+                FilterStatusBinary = 'ON'
             else:
                 FilterStatus = 'Unknown'
-                FilterStatusBinary = 0
+                FilterStatusBinary = 'OFF'
             publish_message(msg=str(FilterStatus), mqtt_path='comfoair/filterstatus')
-            publish_message(msg=int(FilterStatusBinary), mqtt_path='comfoair/filterstatus_binary')
+            publish_message(msg=str(FilterStatusBinary), mqtt_path='comfoair/filterstatus_binary')
             debug_msg('FilterStatus: {0}'.format(FilterStatus))
         else:
             warning_msg('get_filter_status data array too short')
