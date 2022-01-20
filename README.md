@@ -89,6 +89,9 @@ sensor | Supply temperature | °C | Air temperature supplied to the house
 sensor | Return temperature | °C | Air temperature extracted from the house 
 sensor | Exhaust temperature | °C | Air temperature going outside
 sensor | Summer mode | | Current climate mode: `Summer` means cooling via bypass at nighttime, `Winter` means bypass always closed
+sensor | Filter hours| h | Filter hours counter
+number | Filter weeks | weeks | Configuration for filter weeks, possible values from 1 to 26, appears as "number" entity type in HA
+button | Reset filter | | Button entity type to reset filter status
 binary_sensor | Summer mode | | Current climate mode: `On` means cooling via bypass at nighttime, `Off` means bypass always closed
 binary_sensor | Preheating status | | Whether the unit is preheating the air before it enters the heat exchanger.
 binary_sensor | Bypass valve | | State of the bypass valve
