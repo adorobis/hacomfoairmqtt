@@ -178,6 +178,13 @@ def on_message(client, userdata, message):
         if RS485_protocol == False:
             set_comfort_temperature(comforttemp)
             get_temp()
+    elif message.topic == "comfoair/reset_filter":
+        selector = msg_data
+        if selector == "PRESS":
+            reset_filter_timer()
+    elif message.topic == "comfoair/filterweeks":
+        filter_weeks = int(msg_data)    
+        set_filter_weeks(filter_weeks)
     else:
         print("Message "+message.topic+" with message: "+msg_data+" ignored")
     print('FanLevel ' + str(fan_level))
@@ -508,6 +515,7 @@ def get_filter_status():
         warning_msg('get_filter_status function could not get serial data')
     else:
         if len(data) > 16:
+            
             if data[8] == 0:
                 FilterStatus = 'Ok'
                 FilterStatusBinary = 'OFF'
@@ -523,6 +531,54 @@ def get_filter_status():
         else:
             warning_msg('get_filter_status data array too short')
 
+def get_filter_weeks():
+    data = send_command(b'\x00\xC9', None)
+    if data is None:
+        warning_msg('function get_filter_weeks could not get serial data')
+    else:
+        if len(data) > 4:
+            FilterWeeks = data[4]
+            publish_message(msg=str(FilterWeeks), mqtt_path='comfoair/filterweeks_state')
+        else:
+            warning_msg('function get_filter_weeks data array too short')
+
+def set_filter_weeks(nr):
+
+    if 0 <= nr < 256:
+        start = b'\x00\x00\x00\x00'
+        weeks = bytes([nr])
+        end = b'\x00\x00\x00'
+        datasend = start + weeks + end
+        data = send_command(b'\x00\xCB', datasend, expect_reply=False)
+        if data is None:
+            warning_msg('function set_filter_weeks could not get serial data')
+    
+    else:
+        warning_msg('function set_filter_weeks wrong number')
+            
+def get_filter_hours():
+    data = send_command(b'\x00\xDD', None)
+
+    if data is None:
+        warning_msg('function get_filter_hours could not get serial data')
+    else:
+        if len(data) > 16:
+            FilterHours = int.from_bytes(data[15:17], byteorder='big')
+            publish_message(msg=str(FilterHours), mqtt_path='comfoair/filterhours')
+        else:
+            warning_msg('function get_filter_hours data array too short')
+            
+def reset_filter_timer():
+    data = send_command(b'\x00\xDB', b'\x00\x00\x00\x01', expect_reply=False)
+
+    if data is None:
+        warning_msg('reset_filter_timer function could not get serial data')
+    else:
+        get_filter_weeks()
+        get_filter_hours()
+        get_filter_status()
+
+
 # RS485 commands
 
 def get_temp_rs485():
@@ -533,7 +589,6 @@ def get_temp_rs485():
     else:
         if len(data) > 5:
             SupplyAirTemp = 0 #dummy value because it is not available
-            SummerMode = 0 #dummy value because it is not available
             BypassStatus = data[0]
             #data[1:2] unknown, seems like status info
             ExhaustAirTemp = data[3] / 2.0 - 20
@@ -541,17 +596,8 @@ def get_temp_rs485():
             OutsideAirTemp = data[5] / 2.0 - 20
             #data[6:7] optional temperature sensors?
             #data[8:9] unknown, seems like status info
+				
             publish_message(msg=str(BypassStatus), mqtt_path='comfoair/bypassstatus')
-            if BypassStatus == 0:
-                publish_message(msg='OFF', mqtt_path='comfoair/ca350_bypass_valve')
-            else:
-                publish_message(msg='ON', mqtt_path='comfoair/ca350_bypass_valve')
-            if SummerMode == 1:
-                publish_message(msg='Summer', mqtt_path='comfoair/bypassmode')
-                publish_message(msg='ON', mqtt_path='comfoair/ca350_summer_mode')
-            else:
-                publish_message(msg='Winter', mqtt_path='comfoair/bypassmode')
-                publish_message(msg='OFF', mqtt_path='comfoair/ca350_summer_mode')			
             publish_message(msg=str(OutsideAirTemp), mqtt_path='comfoair/outsidetemp')
             publish_message(msg=str(SupplyAirTemp), mqtt_path='comfoair/supplytemp')
             publish_message(msg=str(ExhaustAirTemp), mqtt_path='comfoair/exhausttemp')
@@ -655,12 +701,17 @@ def topic_subscribe():
         info_msg('Successfull subscribed to the comfoair/ha_climate_mode/set topic')
         mqttc.subscribe("comfoair/ha_climate_mode/fan/set", 0)
         info_msg('Successfull subscribed to the comfoair/ha_climate_mode/fan/set topic')
+        mqttc.subscribe("comfoair/reset_filter", 0)
+        info_msg('Successfull subscribed to the comfoair/reset_filter topic')
+        mqttc.subscribe("comfoair/filterweeks", 0)
+        info_msg('Successfull subscribed to the comfoair/filterweeks topic')
+        
     except:
         warning_msg('There was an error while subscribing to the MQTT topic(s), trying again in 10 seconds')
         time.sleep(10)
         topic_subscribe()
 
-def send_autodiscover(name, entity_id, entity_type, state_topic = None, device_class = None, unit_of_measurement = None, icon = None, attributes = {}):
+def send_autodiscover(name, entity_id, entity_type, state_topic = None, device_class = None, unit_of_measurement = None, icon = None, attributes = {}, command_topic = None, min_value = None, max_value = None):
     mqtt_config_topic = "homeassistant/" + entity_type + "/" + entity_id + "/config"
     sensor_unique_id = HAAutoDiscoveryDeviceId + "-" + entity_id
 
@@ -681,7 +732,10 @@ def send_autodiscover(name, entity_id, entity_type, state_topic = None, device_c
     }
     if state_topic:
         discovery_message["state_topic"] = state_topic
-
+        
+    if command_topic:
+        discovery_message["command_topic"] = command_topic
+        
     if unit_of_measurement:
         discovery_message["unit_of_measurement"] = unit_of_measurement
 
@@ -690,7 +744,11 @@ def send_autodiscover(name, entity_id, entity_type, state_topic = None, device_c
 
     if icon:
         discovery_message["icon"] = icon
-    
+    if min_value:
+        discovery_message["min"] = min_value
+    if max_value:
+        discovery_message["max"] = max_value
+        
     if len(attributes) > 0:
         for attribute_key, attribute_value in attributes.items():
             discovery_message[attribute_key] = attribute_value
@@ -768,6 +826,19 @@ def on_connect(client, userdata, flags, rc):
             name="Filter status", entity_id="ca350_filterstatus", entity_type="binary_sensor",
             state_topic="comfoair/filterstatus_binary", device_class="problem", icon="mdi:air-filter"
         )
+        send_autodiscover(
+            name="Filter Weeks", entity_id="ca350_filter_weeks", entity_type="number",
+            command_topic="comfoair/filterweeks", unit_of_measurement="weeks", icon="mdi:air-filter",
+            min_value=0, max_value=52, state_topic="comfoair/filterweeks_state"
+        )
+        send_autodiscover(
+            name="Filter Hours", entity_id="ca350_filter_hours", entity_type="sensor",
+            state_topic="comfoair/filterhours", unit_of_measurement="h", icon="mdi:timer"
+        )
+        send_autodiscover(
+            name="Reset Filter", entity_id="ca350_reset_filter", entity_type="button",
+            command_topic="comfoair/reset_filter", icon="mdi:air-filter"
+        )
        
         # Bypass valve
         send_autodiscover(
@@ -788,7 +859,6 @@ def on_connect(client, userdata, flags, rc):
             name="Summer mode", entity_id="ca350_summer_mode", entity_type="sensor",
             state_topic="comfoair/bypassmode", icon="mdi:sun-snowflake"
         )
-        
         
         send_autodiscover(
             name="Preheating status", entity_id="ca350_preheatingstatus", entity_type="binary_sensor",
@@ -814,6 +884,9 @@ def on_connect(client, userdata, flags, rc):
         delete_message("homeassistant/sensor/analog_sensor_2/config")
         delete_message("homeassistant/sensor/analog_sensor_3/config")
         delete_message("homeassistant/sensor/analog_sensor_4/config")
+        delete_message("homeassistant/button/ca350_reset_filter/config")
+        delete_message("homeassistant/sensor/ca350_filter_hours/config")
+        delete_message("homeassistant/number/ca350_filter_weeks/config")
     #ToDo: Work in progress
     if HAEnableAutoDiscoveryClimate is True:
         info_msg('Home Assistant MQTT Autodiscovery Topic Set: homeassistant/climate/ca350_climate/config')
@@ -892,6 +965,8 @@ else:
                 get_fan_status()
                 get_ventilation_status()
                 get_filter_status()
+                get_filter_weeks()
+                get_filter_hours()
                 get_bypass_status()
                 get_preheating_status()
                 get_analog_sensor()
