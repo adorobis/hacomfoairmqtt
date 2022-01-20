@@ -829,7 +829,7 @@ def on_connect(client, userdata, flags, rc):
         send_autodiscover(
             name="Filter Weeks", entity_id="ca350_filter_weeks", entity_type="number",
             command_topic="comfoair/filterweeks", unit_of_measurement="weeks", icon="mdi:air-filter",
-            min_value=0, max_value=52, state_topic="comfoair/filterweeks_state"
+            min_value=1, max_value=26, state_topic="comfoair/filterweeks_state"
         )
         send_autodiscover(
             name="Filter Hours", entity_id="ca350_filter_hours", entity_type="sensor",
