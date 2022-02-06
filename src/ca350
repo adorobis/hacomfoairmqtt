@@ -504,7 +504,10 @@ def get_preheating_status():
     else:
         if len(data) > 5:
             PreheatingStatus = data[2]
-            publish_message(msg=str(PreheatingStatus), mqtt_path='comfoair/preheatingstatus')
+            if PreheatingStatus == 0:
+                publish_message(msg='OFF', mqtt_path='comfoair/preheatingstatus')
+            else:
+                publish_message(msg='ON', mqtt_path='comfoair/preheatingstatus')
         else:
             warning_msg('function get_preheating_status data array too short')
 
