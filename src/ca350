@@ -462,11 +462,11 @@ def get_fan_status():
         if len(data) > 5:
             IntakeFanSpeed  = data[0]
             ExhaustFanSpeed = data[1]
-            if IntakeFanSpeed != 0:
+            if IntakeFanSpeed != 0 and int.from_bytes(data[2:4], byteorder='big') != 0:
                 IntakeFanRPM    = int(1875000 / int.from_bytes(data[2:4], byteorder='big'))
             else:
                 IntakeFanRPM    = 0
-            if ExhaustFanSpeed != 0:
+            if ExhaustFanSpeed != 0 and int.from_bytes(data[4:6], byteorder='big') != 0:
                 ExhaustFanRPM   = int(1875000 / int.from_bytes(data[4:6], byteorder='big'))
             else:
                 ExhaustFanRPM   = 0
