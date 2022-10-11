@@ -368,6 +368,8 @@ def get_temp():
             SupplyAirTemp = data[2] / 2.0 - 20
             ReturnAirTemp = data[3] / 2.0 - 20
             ExhaustAirTemp = data[4] / 2.0 - 20
+#            SensorsInstalled = data[5]
+#            info_msg('Sensors installed {0} :'.SensorsInstalled)
             EWTTemp = data[6] / 2.0 - 20
 				
             if 10 < ComfortTemp < 30:
@@ -386,26 +388,48 @@ def get_temp():
             warning_msg('get_temp function: incorrect data received')
 def get_ewt():
 #todo add reading of EWT sensors
-#Kommando: 0x00 0xED EWT / Nachheizung setzen
-#Byte[1] EWT niedrig (°C)
-#Byte[2] EWT hoch (°C)
-#Byte[3] EWT speed up (%)
-    ewtdata = []
-    return ewtdata
-
-def set_ewt(ewtlowtemp=0, ewthightemp=0, ewtspeedup=0):
-#todo add setting of EWT parameters
 #Kommando: 0x00 0xEB EWT / Nachheizung setzen
 #Antwort: 0x00 0xEC
 #Byte[1] EWT niedrig (°C)
 #Byte[2] EWT hoch (°C)
 #Byte[3] EWT speed up (%)
 
+    data = send_command(b'\x00\xEB', None)
+    ewtdata = []
+    if data is None:
+        warning_msg('get_ewt function could not get serial data')
+    else:
+        if len(data) > 4:
+            EWTLowTemp = data[0] / 2.0 - 20
+            EWTHighTemp = data[1] / 2.0 - 20
+            EWTSpeedUp = data[2]
+				
+            if 1 < EWTSpeedUp < 101:
+                publish_message(msg=str(EWTLowTemp), mqtt_path='comfoair/ewtlowtemp_state')
+                publish_message(msg=str(EWTHighTemp), mqtt_path='comfoair/ewthightemp_state')
+                publish_message(msg=str(EWTSpeedUp), mqtt_path='comfoair/ewtspeedup_state')
+                debug_msg('EWTLowTemp: {0}, EWTHighTemp: {1}, EWTSpeedUp: {2}'.format(EWTLowTemp, EWTHighTemp, EWTSpeedUp))
+            else:
+                warning_msg('get_ewt returned bad data. Retrying in 2 sec')
+                warning_msg('EWTLowTemp: {0}, EWTHighTemp: {1}, EWTSpeedUp: {2}'.format(EWTLowTemp, EWTHighTemp, EWTSpeedUp))
+                get_ewt()
+        else:
+            warning_msg('get_ewt function: incorrect data received')
+
+    ewtdata.extend((EWTLowTemp, EWTHighTemp, EWTSpeedUp))
+
+    return ewtdata
+
+def set_ewt(ewtlowtemp=0, ewthightemp=0, ewtspeedup=0):
+#todo add setting of EWT parameters
+#Kommando: 0x00 0xED EWT / Nachheizung setzen
+
+#Byte[1] EWT niedrig (°C)
+#Byte[2] EWT hoch (°C)
+#Byte[3] EWT speed up (%)
+
 #read current parameters first
 #update with new values
-
-#see set_filter_weeks(nr)
-
     return None
     
 def get_analog_sensor():
@@ -915,17 +939,17 @@ def on_connect(client, userdata, flags, rc):
         send_autodiscover(
             name="EWT Low Temperature", entity_id="ca350_ewtlowtemp", entity_type="number",
             command_topic="comfoair/ewtlowtemp", unit_of_measurement="°C", icon="mdi:thermometer-low",
-            device_class="temperature", min_value=1, max_value=30, state_topic="comfoair/ewtlowtemp_state"
+            device_class="temperature", min_value=-50, max_value=50, state_topic="comfoair/ewtlowtemp_state"
         )
         send_autodiscover(
             name="EWT High Temperature", entity_id="ca350_ewthighertemp", entity_type="number",
             command_topic="comfoair/ewthightemp", unit_of_measurement="°C", icon="mdi:thermometer-high",
-            device_class="temperature", min_value=1, max_value=30, state_topic="comfoair/ewthightemp_state"
+            device_class="temperature", min_value=-50, max_value=50, state_topic="comfoair/ewthightemp_state"
         )
         send_autodiscover(
             name="EWT Speed Up", entity_id="ca350_ewtspeedup", entity_type="number",
             command_topic="comfoair/ewtspeedup", unit_of_measurement="%", icon="mdi:fan",
-            device_class="temperature", min_value=1, max_value=100, state_topic="comfoair/ewtspeedup_state"
+            device_class="temperature", min_value=0, max_value=100, state_topic="comfoair/ewtspeedup_state"
         )
 
     else:
