@@ -369,8 +369,6 @@ def get_temp():
             SupplyAirTemp = data[2] / 2.0 - 20
             ReturnAirTemp = data[3] / 2.0 - 20
             ExhaustAirTemp = data[4] / 2.0 - 20
-#            SensorsInstalled = data[5]
-#            info_msg('Sensors installed {0} :'.SensorsInstalled)
             EWTTemp = data[6] / 2.0 - 20
 				
             if 10 < ComfortTemp < 30:
@@ -388,7 +386,6 @@ def get_temp():
         else:
             warning_msg('get_temp function: incorrect data received')
 def get_ewt():
-
     data = send_command(b'\x00\xEB', None)
     ewtdata = []
     if data is None:
@@ -428,7 +425,6 @@ def get_ewt():
     return ewtdata
 
 def set_ewt(ewtlowtemp=None, ewthightemp=None, ewtspeedup=None):
-
     ewtdata = get_ewt()
     warning_msg('get_ewt received data {0} '.format(ewtdata))
     if len(ewtdata) == 0:
