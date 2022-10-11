@@ -93,12 +93,9 @@ binary_sensor | Preheating status | | Whether the unit is preheating the air bef
 binary_sensor | Bypass valve | | State of the bypass valve
 binary_sensor | Filter status | | Whether or not the air filters need cleaning / replacing
 sensor | EWT Temperature | °C | EWT Temperature (geothermal heat exchanger)
-sensor | EWT Lower Set Temperature | °C | EWT Lower Set Temperature sensor
-sensor | EWT Upper Set Temperature | °C | EWT Upper Set Temperature sensor
-sensor | EWT EWT speed up | % | EWT speed up sensor
 number | EWT Lower Set Temperature | °C | EWT Lower Set Temperature control
 number | EWT Upper Set Temperature | °C | EWT Upper Set Temperature control
-number | EWT EWT speed up | % | EWT speed up control
+number | EWT speed up | % | EWT speed up control
 
 
 
