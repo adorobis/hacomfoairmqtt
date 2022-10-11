@@ -44,7 +44,7 @@ extra_commands="restart test"
 
 start_precmd=${name}_precmd
 ca350_precmd() {
-    rc_flags="-f -o ${logfile} -P ${pidfile} -p ${pidfile_child} ${ca350_venv}/bin/ca350 ${rc_flags}"
+    rc_flags="-f -o ${logfile} -P ${pidfile} -p ${pidfile_child} ${ca350_venv}/bin/ca350.py ${rc_flags}"
     [ ! -e "${pidfile_child}" ] && install -g ${ca350_group} -o ${ca350_user} -- /dev/null "${pidfile_child}"
     [ ! -e "${pidfile}" ] && install -g ${ca350_group} -o ${ca350_user} -- /dev/null "${pidfile}"
     [ ! -e "${logfile}" ] && rm -f -- "${logfile}"
