@@ -14,9 +14,9 @@ todo :
 - check on faulty messages
 - serial check
 The following packages are needed:
-sudo pkg install py37-serial python3-pip python3-yaml
+sudo pkg install py39-serial python3-pip python3-yaml
 sudo pip3 install paho-mqtt
-start script with python3.7 ca350
+start script with python3.9 ca350.py
 """
 
 import paho.mqtt.client as mqtt
