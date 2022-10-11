@@ -1,4 +1,4 @@
-#!/usr/local/share/ca350/bin/python3.8
+#!/usr/local/share/ca350/bin/python3.9
 # -*- coding: utf-8 -*-
 
 """
@@ -403,8 +403,8 @@ def set_ewt(ewtlowtemp=0, ewthightemp=0, ewtspeedup=0):
 
 #read current parameters first
 #update with new values
-
-
+    return None
+    
 def get_analog_sensor():
     data = send_command(b'\x00\x97', None)
     if data is None:
