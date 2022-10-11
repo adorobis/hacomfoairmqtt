@@ -2,15 +2,11 @@
 Home Assistant integration for ComfoAir 350 device via serial communication and MQTT
 This work is based on scripts created for Domoticz integration https://github.com/AlbertHakvoort/StorkAir-Zehnder-WHR-930-Domoticz-MQTT
 
-`configuration.yaml` - sample entries for MQTT Fan integration device and service status binary_sensor
-
 `src/ca350` - python script to communicate with the CA350 unit via serial port, publish data on MQTT broker and react to control messages
 
 `src/config.ini.dist` - sample configuration file. Needs to be renamed to config.ini and customized
 
 `rc.d/ca350` - rc.d script to set up the service in FreeNAS jail virtual python environment
-
-`servicetest.sh` - simple script to test ca350 service status
 
 File locations when installed on FreeNAS jail:
 Python script: 
@@ -96,7 +92,13 @@ binary_sensor | Summer mode | | Current climate mode: `On` means cooling via byp
 binary_sensor | Preheating status | | Whether the unit is preheating the air before it enters the heat exchanger.
 binary_sensor | Bypass valve | | State of the bypass valve
 binary_sensor | Filter status | | Whether or not the air filters need cleaning / replacing
-
+sensor | EWT Temperature | °C | EWT Temperature (geothermal heat exchanger)
+sensor | EWT Lower Set Temperature | °C | EWT Lower Set Temperature sensor
+sensor | EWT Upper Set Temperature | °C | EWT Upper Set Temperature sensor
+sensor | EWT EWT speed up | % | EWT speed up sensor
+number | EWT Lower Set Temperature | °C | EWT Lower Set Temperature control
+number | EWT Upper Set Temperature | °C | EWT Upper Set Temperature control
+number | EWT EWT speed up | % | EWT speed up control
 
 
 
