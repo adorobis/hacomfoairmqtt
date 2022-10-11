@@ -403,6 +403,9 @@ def set_ewt(ewtlowtemp=0, ewthightemp=0, ewtspeedup=0):
 
 #read current parameters first
 #update with new values
+
+#see set_filter_weeks(nr)
+
     return None
     
 def get_analog_sensor():
