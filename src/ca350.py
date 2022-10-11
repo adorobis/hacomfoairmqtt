@@ -185,6 +185,15 @@ def on_message(client, userdata, message):
     elif message.topic == "comfoair/filterweeks":
         filter_weeks = int(msg_data)    
         set_filter_weeks(filter_weeks)
+    elif message.topic == "comfoair/ewtlowtemp":
+        ewtlowtemp = int(msg_data)
+        set_ewt(ewtlowtemp=ewtlowtemp)
+    elif message.topic == "comfoair/ewthightemp":
+        ewthightemp = int(msg_data)
+        set_ewt(ewthightemp=ewthightemp)
+    elif message.topic == "comfoair/ewtspeedup":
+        ewtspeedup = int(msg_data)
+        set_ewt(ewtspeedup=ewtspeedup)
     else:
         print("Message "+message.topic+" with message: "+msg_data+" ignored")
     print('FanLevel ' + str(fan_level))
@@ -359,6 +368,7 @@ def get_temp():
             SupplyAirTemp = data[2] / 2.0 - 20
             ReturnAirTemp = data[3] / 2.0 - 20
             ExhaustAirTemp = data[4] / 2.0 - 20
+            EWTTemp = data[6] / 2.0 - 20
 				
             if 10 < ComfortTemp < 30:
                 publish_message(msg=str(ComfortTemp), mqtt_path='comfoair/comforttemp')
@@ -366,14 +376,34 @@ def get_temp():
                 publish_message(msg=str(SupplyAirTemp), mqtt_path='comfoair/supplytemp')
                 publish_message(msg=str(ExhaustAirTemp), mqtt_path='comfoair/exhausttemp')
                 publish_message(msg=str(ReturnAirTemp), mqtt_path='comfoair/returntemp')
-                debug_msg('OutsideAirTemp: {0}, SupplyAirTemp: {1}, ReturnAirTemp: {2}, ExhaustAirTemp: {3}, ComfortTemp: {4}'.format(OutsideAirTemp, SupplyAirTemp, ReturnAirTemp, ExhaustAirTemp, ComfortTemp))
+                publish_message(msg=str(EWTTemp), mqtt_path='comfoair/ewttemp')
+                debug_msg('OutsideAirTemp: {0}, SupplyAirTemp: {1}, ReturnAirTemp: {2}, ExhaustAirTemp: {3}, ComfortTemp: {4}, EWTTemp: {5}'.format(OutsideAirTemp, SupplyAirTemp, ReturnAirTemp, ExhaustAirTemp, ComfortTemp, EWTTemp))
             else:
                 warning_msg('get_temp returned bad temp data. Retrying in 2 sec')
-                warning_msg('OutsideAirTemp: {0}, SupplyAirTemp: {1}, ReturnAirTemp: {2}, ExhaustAirTemp: {3}, ComfortTemp: {4}'.format(OutsideAirTemp, SupplyAirTemp, ReturnAirTemp, ExhaustAirTemp, ComfortTemp))
-                time.sleep(2)
+                warning_msg('OutsideAirTemp: {0}, SupplyAirTemp: {1}, ReturnAirTemp: {2}, ExhaustAirTemp: {3}, ComfortTemp: {4}, EWTTemp: {5}'.format(OutsideAirTemp, SupplyAirTemp, ReturnAirTemp, ExhaustAirTemp, ComfortTemp, EWTTemp))
                 get_temp()
         else:
             warning_msg('get_temp function: incorrect data received')
+def get_ewt():
+#todo add reading of EWT sensors
+#Kommando: 0x00 0xED EWT / Nachheizung setzen
+#Byte[1] EWT niedrig (°C)
+#Byte[2] EWT hoch (°C)
+#Byte[3] EWT speed up (%)
+    ewtdata = []
+    return ewtdata
+
+def set_ewt(ewtlowtemp=0, ewthightemp=0, ewtspeedup=0):
+#todo add setting of EWT parameters
+#Kommando: 0x00 0xEB EWT / Nachheizung setzen
+#Antwort: 0x00 0xEC
+#Byte[1] EWT niedrig (°C)
+#Byte[2] EWT hoch (°C)
+#Byte[3] EWT speed up (%)
+
+#read current parameters first
+#update with new values
+
 
 def get_analog_sensor():
     data = send_command(b'\x00\x97', None)
@@ -873,6 +903,28 @@ def on_connect(client, userdata, flags, rc):
             name="Preheating status", entity_id="ca350_preheatingstatus", entity_type="binary_sensor",
             state_topic="comfoair/preheatingstatus", device_class="heat"
         )
+
+        # EWT sensor and controls
+        send_autodiscover(
+            name="EWT temperature", entity_id="ca350_ewttemp", entity_type="sensor",
+            state_topic="comfoair/ewttemp", device_class="temperature", unit_of_measurement="°C"
+        )
+        send_autodiscover(
+            name="EWT Low Temperature", entity_id="ca350_ewtlowtemp", entity_type="number",
+            command_topic="comfoair/ewtlowtemp", unit_of_measurement="°C", icon="mdi:thermometer-low",
+            device_class="temperature", min_value=1, max_value=30, state_topic="comfoair/ewtlowtemp_state"
+        )
+        send_autodiscover(
+            name="EWT High Temperature", entity_id="ca350_ewthighertemp", entity_type="number",
+            command_topic="comfoair/ewthightemp", unit_of_measurement="°C", icon="mdi:thermometer-high",
+            device_class="temperature", min_value=1, max_value=30, state_topic="comfoair/ewthightemp_state"
+        )
+        send_autodiscover(
+            name="EWT Speed Up", entity_id="ca350_ewtspeedup", entity_type="number",
+            command_topic="comfoair/ewtspeedup", unit_of_measurement="%", icon="mdi:fan",
+            device_class="temperature", min_value=1, max_value=100, state_topic="comfoair/ewtspeedup_state"
+        )
+
     else:
         delete_message("homeassistant/sensor/ca350_outsidetemp/config")
         delete_message("homeassistant/sensor/ca350_supplytemp/config")
@@ -968,8 +1020,6 @@ else:
     while True:
         try:
             if RS485_protocol == False:
-                #get_ventilation_levels()
-                #set_fan_levels()
                 get_temp()
                 get_fan_status()
                 get_ventilation_status()
@@ -979,6 +1029,7 @@ else:
                 get_bypass_status()
                 get_preheating_status()
                 get_analog_sensor()
+                get_ewt()
             else:
                 get_temp_rs485()
                 get_fan_status_rs485()
