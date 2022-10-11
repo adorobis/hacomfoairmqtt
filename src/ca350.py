@@ -192,6 +192,7 @@ def on_message(client, userdata, message):
         ewthightemp = int(msg_data)
         set_ewt(ewthightemp=ewthightemp)
     elif message.topic == "comfoair/ewtspeedup":
+        print("Message "+message.topic+" with message: "+msg_data)
         ewtspeedup = int(msg_data)
         set_ewt(ewtspeedup=ewtspeedup)
     else:
@@ -387,12 +388,6 @@ def get_temp():
         else:
             warning_msg('get_temp function: incorrect data received')
 def get_ewt():
-#todo add reading of EWT sensors
-#Kommando: 0x00 0xEB EWT / Nachheizung setzen
-#Antwort: 0x00 0xEC
-#Byte[1] EWT niedrig (°C)
-#Byte[2] EWT hoch (°C)
-#Byte[3] EWT speed up (%)
 
     data = send_command(b'\x00\xEB', None)
     ewtdata = []
@@ -404,11 +399,25 @@ def get_ewt():
             EWTHighTemp = data[1] / 2.0 - 20
             EWTSpeedUp = data[2]
 				
-            if 1 < EWTSpeedUp < 101:
+            if -1 < EWTSpeedUp < 100:
                 publish_message(msg=str(EWTLowTemp), mqtt_path='comfoair/ewtlowtemp_state')
                 publish_message(msg=str(EWTHighTemp), mqtt_path='comfoair/ewthightemp_state')
                 publish_message(msg=str(EWTSpeedUp), mqtt_path='comfoair/ewtspeedup_state')
-                debug_msg('EWTLowTemp: {0}, EWTHighTemp: {1}, EWTSpeedUp: {2}'.format(EWTLowTemp, EWTHighTemp, EWTSpeedUp))
+                
+                ewtdata.append(EWTLowTemp)
+                ewtdata.append(EWTHighTemp)
+                ewtdata.append(EWTSpeedUp)
+                
+                if EWTLowTemp < 0 or EWTHighTemp < 10:
+                    if EWTLowTemp < 0:
+                        EWTLowTemp = 0
+                    if EWTHighTemp < 10:
+                        EWTHighTemp = 10
+                        
+                    set_ewt(EWTLowTemp, EWTHighTemp, EWTSpeedUp)
+                    warning_msg('EWT Settings out of range, correcting to minimal temperature values')
+                    get_ewt()
+                
             else:
                 warning_msg('get_ewt returned bad data. Retrying in 2 sec')
                 warning_msg('EWTLowTemp: {0}, EWTHighTemp: {1}, EWTSpeedUp: {2}'.format(EWTLowTemp, EWTHighTemp, EWTSpeedUp))
@@ -416,22 +425,41 @@ def get_ewt():
         else:
             warning_msg('get_ewt function: incorrect data received')
 
-    ewtdata.extend((EWTLowTemp, EWTHighTemp, EWTSpeedUp))
-
     return ewtdata
 
-def set_ewt(ewtlowtemp=0, ewthightemp=0, ewtspeedup=0):
-#todo add setting of EWT parameters
-#Kommando: 0x00 0xED EWT / Nachheizung setzen
+def set_ewt(ewtlowtemp=None, ewthightemp=None, ewtspeedup=None):
 
-#Byte[1] EWT niedrig (°C)
-#Byte[2] EWT hoch (°C)
-#Byte[3] EWT speed up (%)
+    ewtdata = get_ewt()
+    warning_msg('get_ewt received data {0} '.format(ewtdata))
+    if len(ewtdata) == 0:
+        warning_msg('set_ewt function has not received ewt serial data')
+    else:
+        if ewtlowtemp is None:
+            data1 = bytes([int(ewtdata[0] * 2 + 40)])
+        else:
+            data1 = bytes([ewtlowtemp * 2 + 40])
 
-#read current parameters first
-#update with new values
-    return None
-    
+        if ewthightemp is None:
+            data2 = bytes([int(ewtdata[1] * 2 + 40)])
+        else:
+            data2 = bytes([ewthightemp * 2 + 40])
+
+        if ewtspeedup is None:
+            data3 = bytes([ewtdata[2]])
+        else:
+            data3 = bytes([ewtspeedup])
+
+        datasend = data1 + data2 + data3
+        
+        data = send_command(b'\x00\xED', datasend, expect_reply=True)
+        
+        if data is None:
+            warning_msg('function set_ewt could not get serial data')
+        
+        else:
+            warning_msg('function set_ewt wrong number')
+
+            
 def get_analog_sensor():
     data = send_command(b'\x00\x97', None)
     if data is None:
@@ -771,6 +799,13 @@ def topic_subscribe():
         info_msg('Successfull subscribed to the comfoair/reset_filter topic')
         mqttc.subscribe("comfoair/filterweeks", 0)
         info_msg('Successfull subscribed to the comfoair/filterweeks topic')
+
+        mqttc.subscribe("comfoair/ewtlowtemp", 0)
+        info_msg('Successfull subscribed to the comfoair/ewtlowtemp topic')
+        mqttc.subscribe("comfoair/ewthightemp", 0)
+        info_msg('Successfull subscribed to the comfoair/ewthightemp topic')
+        mqttc.subscribe("comfoair/ewtspeedup", 0)
+        info_msg('Successfull subscribed to the comfoair/ewtspeedup topic')
         
     except:
         warning_msg('There was an error while subscribing to the MQTT topic(s), trying again in 10 seconds')
@@ -939,17 +974,17 @@ def on_connect(client, userdata, flags, rc):
         send_autodiscover(
             name="EWT Low Temperature", entity_id="ca350_ewtlowtemp", entity_type="number",
             command_topic="comfoair/ewtlowtemp", unit_of_measurement="°C", icon="mdi:thermometer-low",
-            device_class="temperature", min_value=-50, max_value=50, state_topic="comfoair/ewtlowtemp_state"
+            device_class="temperature", min_value=0, max_value=15, state_topic="comfoair/ewtlowtemp_state"
         )
         send_autodiscover(
             name="EWT High Temperature", entity_id="ca350_ewthighertemp", entity_type="number",
             command_topic="comfoair/ewthightemp", unit_of_measurement="°C", icon="mdi:thermometer-high",
-            device_class="temperature", min_value=-50, max_value=50, state_topic="comfoair/ewthightemp_state"
+            device_class="temperature", min_value=10, max_value=25, state_topic="comfoair/ewthightemp_state"
         )
         send_autodiscover(
             name="EWT Speed Up", entity_id="ca350_ewtspeedup", entity_type="number",
             command_topic="comfoair/ewtspeedup", unit_of_measurement="%", icon="mdi:fan",
-            device_class="temperature", min_value=0, max_value=100, state_topic="comfoair/ewtspeedup_state"
+            device_class="temperature", min_value=0, max_value=99, state_topic="comfoair/ewtspeedup_state"
         )
 
     else:
