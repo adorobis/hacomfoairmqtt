@@ -1,8 +1,11 @@
 # hacomfoairmqtt
-Home Assistant integration for ComfoAir 350 device via serial communication and MQTT
+Home Assistant integration for ComfoAir (*) devices via serial communication and MQTT
+
+*It is not compatible with the newer Q or Aeris Next models as they use a different communication standard.
+
 This work is based on scripts created for Domoticz integration https://github.com/AlbertHakvoort/StorkAir-Zehnder-WHR-930-Domoticz-MQTT
 
-`src/ca350` - python script to communicate with the CA350 unit via serial port, publish data on MQTT broker and react to control messages
+`src/ca350.py` - python script to communicate with the Comfoair unit via serial port, publish data on MQTT broker and react to control messages
 
 `src/config.ini.dist` - sample configuration file. Needs to be renamed to config.ini and customized
 
@@ -15,7 +18,7 @@ Daemon config file:
 `/usr/local/etc/rc.d/ca350`
 
 
-## Installation instructions:
+## Installation instructions for FreeBSD (e.g. TrueNAS) deployment:
 1. The following packages are needed:
 `sudo pkg install python3-pip python3-yaml`
 2. Create directory for the application `/usr/local/share/ca350/bin/` and copy `src/ca350` script to it
