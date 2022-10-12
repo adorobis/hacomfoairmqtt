@@ -14,9 +14,9 @@ todo :
 - check on faulty messages
 - serial check
 The following packages are needed:
-sudo pkg install py39-serial python3-pip python3-yaml
+sudo pkg install py37-serial python3-pip python3-yaml
 sudo pip3 install paho-mqtt
-start script with python3.9 ca350.py
+start script with python3.7 ca350
 """
 
 import paho.mqtt.client as mqtt
@@ -369,6 +369,8 @@ def get_temp():
             SupplyAirTemp = data[2] / 2.0 - 20
             ReturnAirTemp = data[3] / 2.0 - 20
             ExhaustAirTemp = data[4] / 2.0 - 20
+#            SensorsInstalled = data[5]
+#            info_msg('Sensors installed {0} :'.SensorsInstalled)
             EWTTemp = data[6] / 2.0 - 20
 				
             if 10 < ComfortTemp < 30:
@@ -386,6 +388,7 @@ def get_temp():
         else:
             warning_msg('get_temp function: incorrect data received')
 def get_ewt():
+
     data = send_command(b'\x00\xEB', None)
     ewtdata = []
     if data is None:
@@ -410,23 +413,33 @@ def get_ewt():
                         EWTLowTemp = 0
                     if EWTHighTemp < 10:
                         EWTHighTemp = 10
-                        
-                    set_ewt(EWTLowTemp, EWTHighTemp, EWTSpeedUp)
+                    debug_msg('EWTLowTemp: {0}, EWTHighTemp: {1}, EWTSpeedUp: {2}'.format(EWTLowTemp, EWTHighTemp, EWTSpeedUp))
+                    set_ewt(EWTLowTemp, EWTHighTemp, EWTSpeedUp, True)
                     warning_msg('EWT Settings out of range, correcting to minimal temperature values')
+                    time.sleep(10)
                     get_ewt()
                 
             else:
                 warning_msg('get_ewt returned bad data. Retrying in 2 sec')
                 warning_msg('EWTLowTemp: {0}, EWTHighTemp: {1}, EWTSpeedUp: {2}'.format(EWTLowTemp, EWTHighTemp, EWTSpeedUp))
+                time.sleep(2)
                 get_ewt()
         else:
             warning_msg('get_ewt function: incorrect data received')
 
     return ewtdata
 
-def set_ewt(ewtlowtemp=None, ewthightemp=None, ewtspeedup=None):
-    ewtdata = get_ewt()
-    warning_msg('get_ewt received data {0} '.format(ewtdata))
+def set_ewt(ewtlowtemp=None, ewthightemp=None, ewtspeedup=None, initial=False):
+
+    ewtdata = []
+    if initial == False:
+        ewtdata = get_ewt()
+        warning_msg('get_ewt received data {0} '.format(ewtdata))
+    else:
+        ewtdata.append(ewtlowtemp)
+        ewtdata.append(ewthightemp)
+        ewtdata.append(ewtspeedup)
+        
     if len(ewtdata) == 0:
         warning_msg('set_ewt function has not received ewt serial data')
     else:
@@ -446,14 +459,13 @@ def set_ewt(ewtlowtemp=None, ewthightemp=None, ewtspeedup=None):
             data3 = bytes([ewtspeedup])
 
         datasend = data1 + data2 + data3
-        
+        debug_msg('ewt data do be sent {0} '.format(datasend))
         data = send_command(b'\x00\xED', datasend, expect_reply=True)
         
         if data is None:
-            warning_msg('function set_ewt could not get serial data')
-        
-        else:
-            warning_msg('function set_ewt wrong number')
+            warning_msg('function set_ewt could not get serial data, retrying in 2 seconds')
+            time.sleep(2)
+            data = send_command(b'\x00\xED', datasend, expect_reply=True)
 
             
 def get_analog_sensor():
