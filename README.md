@@ -21,7 +21,7 @@ Daemon config file:
 ## Installation instructions for FreeBSD (e.g. TrueNAS) deployment:
 1. The following packages are needed:
 `sudo pkg install python3-pip python3-yaml`
-2. Create directory for the application `/usr/local/share/ca350/bin/` and copy `src/ca350` script to it
+2. Create directory for the application `/usr/local/share/ca350/bin/` and copy `src/ca350.py` script to it
 3. Copy the src/config.ini.dist to /usr/local/share/ca350/bin/config.ini and update as required (serial port and MQTT server mainly)
 4. Create virtual environment: 
 `python3 -m venv /usr/local/share/ca350/`
