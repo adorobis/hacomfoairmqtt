@@ -94,8 +94,8 @@ The following Lovelace widgets depend on the MQTT AD enities and can be used wit
 
 ## TODO:
 - [ ] Create installation script for automatic installation of the script
-- [ ] venv
-- [ ] dependencies and the service. 
+    - [ ] venv
+    - [ ] dependencies and the service. 
 - [ ] Installation description for Debian based Linux Systems
 - [ ] Full Control in Home Assistant with a single Widget (Fan Speed, Temperature)
 - [ ] React on input immediatly - Still Read on Interval Status
