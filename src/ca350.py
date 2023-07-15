@@ -847,6 +847,7 @@ def send_autodiscover(name, entity_id, entity_type, state_topic = None, device_c
         
     if unit_of_measurement:
         discovery_message["unit_of_measurement"] = unit_of_measurement
+        discovery_message["state_class"] = "measurement"
 
     if device_class:
         discovery_message["device_class"] = device_class
