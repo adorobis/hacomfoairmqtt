@@ -820,7 +820,7 @@ def topic_subscribe():
         time.sleep(10)
         topic_subscribe()
 
-def send_autodiscover(name, entity_id, entity_type, state_topic = None, device_class = None, unit_of_measurement = None, icon = None, attributes = {}, command_topic = None, min_value = None, max_value = None):
+def send_autodiscover(name, entity_id, entity_type, state_topic = None, device_class = None, unit_of_measurement = None, state_class = None, icon = None, attributes = {}, command_topic = None, min_value = None, max_value = None):
     mqtt_config_topic = "homeassistant/" + entity_type + "/" + entity_id + "/config"
     sensor_unique_id = HAAutoDiscoveryDeviceId + "-" + entity_id
 
@@ -847,6 +847,9 @@ def send_autodiscover(name, entity_id, entity_type, state_topic = None, device_c
         
     if unit_of_measurement:
         discovery_message["unit_of_measurement"] = unit_of_measurement
+
+    if state_class:
+        discovery_message["state_class"] = state_class
 
     if device_class:
         discovery_message["device_class"] = device_class
@@ -878,56 +881,68 @@ def on_connect(client, userdata, flags, rc):
         # Temperature readings
         send_autodiscover(
             name="Outside temperature", entity_id="ca350_outsidetemp", entity_type="sensor",
-            state_topic="comfoair/outsidetemp", device_class="temperature", unit_of_measurement="°C"
+            state_topic="comfoair/outsidetemp", device_class="temperature", unit_of_measurement="°C",
+            state_class="measurement"
         )
         send_autodiscover(
             name="Supply temperature", entity_id="ca350_supplytemp", entity_type="sensor",
-            state_topic="comfoair/supplytemp", device_class="temperature", unit_of_measurement="°C"
+            state_topic="comfoair/supplytemp", device_class="temperature", unit_of_measurement="°C",
+            state_class="measurement"
         )
         send_autodiscover(
             name="Exhaust temperature", entity_id="ca350_exhausttemp", entity_type="sensor",
-            state_topic="comfoair/exhausttemp", device_class="temperature", unit_of_measurement="°C"
+            state_topic="comfoair/exhausttemp", device_class="temperature", unit_of_measurement="°C",
+            state_class="measurement"
         )
         send_autodiscover(
             name="Return temperature", entity_id="ca350_returntemp", entity_type="sensor",
-            state_topic="comfoair/returntemp", device_class="temperature", unit_of_measurement="°C"
+            state_topic="comfoair/returntemp", device_class="temperature", unit_of_measurement="°C",
+            state_class="measurement"
         )
 
         # Analog sensors
         send_autodiscover(
             name="Analog sensor 1", entity_id="ca350_analog_sensor_1", entity_type="sensor",
-            state_topic="comfoair/analog_sensor_1", unit_of_measurement="%", icon="mdi:gauge"
+            state_topic="comfoair/analog_sensor_1", unit_of_measurement="%", icon="mdi:gauge",
+            state_class="measurement"
         )
         send_autodiscover(
             name="Analog sensor 2", entity_id="ca350_analog_sensor_2", entity_type="sensor",
-            state_topic="comfoair/analog_sensor_2", unit_of_measurement="%", icon="mdi:gauge"
+            state_topic="comfoair/analog_sensor_2", unit_of_measurement="%", icon="mdi:gauge",
+            state_class="measurement"
         )
         send_autodiscover(
             name="Analog sensor 3", entity_id="ca350_analog_sensor_3", entity_type="sensor",
-            state_topic="comfoair/analog_sensor_3", unit_of_measurement="%", icon="mdi:gauge"
+            state_topic="comfoair/analog_sensor_3", unit_of_measurement="%", icon="mdi:gauge",
+            state_class="measurement"
         )
         send_autodiscover(
             name="Analog sensor 4", entity_id="ca350_analog_sensor_4", entity_type="sensor",
-            state_topic="comfoair/analog_sensor_4", unit_of_measurement="%", icon="mdi:gauge"
+            state_topic="comfoair/analog_sensor_4", unit_of_measurement="%", icon="mdi:gauge",
+            state_class="measurement"
         )
 
         # Fan speeds
         send_autodiscover(
             name="Supply fan speed", entity_id="ca350_fan_speed_supply", entity_type="sensor",
-            state_topic="comfoair/intakefanrpm", unit_of_measurement="rpm", icon="mdi:fan"
+            state_topic="comfoair/intakefanrpm", unit_of_measurement="rpm", icon="mdi:fan",
+            state_class="measurement"
         )
         send_autodiscover(
             name="Exhaust fan speed", entity_id="ca350_fan_speed_exhaust", entity_type="sensor",
-            state_topic="comfoair/exhaustfanrpm", unit_of_measurement="rpm", icon="mdi:fan"
+            state_topic="comfoair/exhaustfanrpm", unit_of_measurement="rpm", icon="mdi:fan",
+            state_class="measurement"
         )
 
         send_autodiscover(
             name="Supply air level", entity_id="ca350_supply_air_level", entity_type="sensor",
-            state_topic="comfoair/intakefanspeed", unit_of_measurement="%", icon="mdi:fan"
+            state_topic="comfoair/intakefanspeed", unit_of_measurement="%", icon="mdi:fan",
+            state_class="measurement"
         )
         send_autodiscover(
             name="Return air level", entity_id="ca350_return_air_level", entity_type="sensor",
-            state_topic="comfoair/exhaustfanspeed", unit_of_measurement="%", icon="mdi:fan"
+            state_topic="comfoair/exhaustfanspeed", unit_of_measurement="%", icon="mdi:fan",
+            state_class="measurement"
         )
 
         # Filter
@@ -977,7 +992,8 @@ def on_connect(client, userdata, flags, rc):
         # EWT sensor and controls
         send_autodiscover(
             name="EWT temperature", entity_id="ca350_ewttemp", entity_type="sensor",
-            state_topic="comfoair/ewttemp", device_class="temperature", unit_of_measurement="°C"
+            state_topic="comfoair/ewttemp", device_class="temperature", unit_of_measurement="°C",
+            state_class="measurement"
         )
         send_autodiscover(
             name="EWT Low Temperature", entity_id="ca350_ewtlowtemp", entity_type="number",
