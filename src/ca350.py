@@ -825,7 +825,8 @@ def send_autodiscover(name, entity_id, entity_type, state_topic = None, device_c
     sensor_unique_id = HAAutoDiscoveryDeviceId + "-" + entity_id
 
     discovery_message = {
-        "name": HAAutoDiscoveryDeviceName + " " + name,
+        "name": name,
+        "has_entity_name": True,
         "availability_topic":"comfoair/status",
         "payload_available":"online",
         "payload_not_available":"offline",
