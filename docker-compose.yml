@@ -6,6 +6,8 @@ services:
     container_name: hassioaddon-comfoair350
     environment:
       - SOCAT=True
+      - COMFOAIR_IP=192.168.1.50
+      - COMFOAIR_PORT=502
       - SERIAL_PORT="/dev/comfoair350"
       - RS485_PROTOCOL=False
       - REFRESH_INTERVAL=10
