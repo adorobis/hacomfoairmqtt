@@ -1,9 +1,10 @@
 # hacomfoairmqtt
+
 Home Assistant integration for ComfoAir (*) devices via serial communication and MQTT
 
 *It is not compatible with the newer Q or Aeris Next models as they use a different communication standard.
 
-This work is based on scripts created for Domoticz integration https://github.com/AlbertHakvoort/StorkAir-Zehnder-WHR-930-Domoticz-MQTT
+This work is based on scripts created for Domoticz integration <https://github.com/AlbertHakvoort/StorkAir-Zehnder-WHR-930-Domoticz-MQTT>
 
 `src/ca350.py` - python script to communicate with the Comfoair unit via serial port, publish data on MQTT broker and react to control messages
 
@@ -12,10 +13,12 @@ This work is based on scripts created for Domoticz integration https://github.co
 `rc.d/ca350` - rc.d script to set up the service in FreeNAS jail virtual python environment
 
 ## Installation instructions in the project Wiki
-https://github.com/adorobis/hacomfoairmqtt/wiki
+
+<https://github.com/adorobis/hacomfoairmqtt/wiki>
 
 
 ## Home Assistant Comfoair MQTT Configuration
+
 Configuration Name | Description
 ------------ | -------------
 SerialPort       | The Serialport to the Comfoair on the Host Linux Machine. Examples: /dev/ttyUSB0 or /dev/cuau3
@@ -29,13 +32,12 @@ enablePcMode     | Automaticly enable PC Mode (disable comfosense). Default: Fal
 RS485_protocol   | Enable RS485 protocol, if false RSS232 is used Default: False (RS232)
 debug            | Enable Debug Output. Default: False (disabled)
 
-
 ## MQTT Auto Discovery Configutation:
-If you are using MQTT in Home Assistant, you will probably have the Auto Discovery enabled by default. The MQTT AD implementation is expected to run with the prefix "homeassistant/". 
 
+If you are using MQTT in Home Assistant, you will probably have the Auto Discovery enabled by default.k The MQTT AD implementation is expected to run with the prefix "homeassistant/". 
 
+### Configuration: HAEnableAutoDiscoverySensors = True
 
-### Configuration: HAEnableAutoDiscoverySensors = True 
 Configuration Name | Description
 ------------ | -------------
 HAEnableAutoDiscoverySensors | Enable Home Assistant Auto Discovery
@@ -43,8 +45,6 @@ HAAutoDiscoveryDeviceId | Unique ID to use for Home Assistant Device Discovery
 HAAutoDiscoveryDeviceName | Device name to show in the Home Assistant frontend
 HAAutoDiscoveryDeviceManufacturer | Device manufacturer to show in the Home Assistant frontend
 HAAutoDiscoveryDeviceModel | Device model to show in the Home Assistant frontend
-
-
 
 If you enable Autodiscovery in this Service, you will get following entities:
 The entity id consists of the `HAAutoDiscoveryDeviceName` and the Entity Name.
@@ -77,9 +77,8 @@ number | EWT Lower Set Temperature | °C | EWT Lower Set Temperature control
 number | EWT Upper Set Temperature | °C | EWT Upper Set Temperature control
 number | EWT speed up | % | EWT speed up control
 
+### Configuration: HAEnableAutoDiscoveryClimate = False
 
-
-### Configuration: HAEnableAutoDiscoveryClimate = False 
 Adding the Comfoair as an HAVC makes sense, since it has a temperature control and a fan.
 
 Entity Name | Description
@@ -87,18 +86,20 @@ Entity Name | Description
 climate.ca350_climate | Expose Comfort Temperature Control & Fan Control
 
 ## HA Lovelace Widget:
+
 The following Lovelace widgets depend on the MQTT AD enities and can be used with this service:
 
-* https://github.com/TimWeyand/lovelace-comfoair
-* https://github.com/mweimerskirch/lovelace-hacomfoairmqtt
+* <https://github.com/TimWeyand/lovelace-comfoair>
+* <https://github.com/mweimerskirch/lovelace-hacomfoairmqtt>
 
-## TODO:
-- [ ] Create installation script for automatic installation of the script
-    - [ ] venv
-    - [ ] dependencies and the service. 
-- [ ] Installation description for Debian based Linux Systems
-- [ ] Full Control in Home Assistant with a single Widget (Fan Speed, Temperature)
-- [ ] React on input immediatly - Still Read on Interval Status
-- [ ] Implement set_fan_levels() based on values from MQTT (e.g. input_numbers in HA) to set the fan levels for all modes. Also enables setting intake or exhaust fans only as in original controller.
+## TODO
+
+* [ ] Create installation script for automatic installation of the script
+  * [ ] venv
+  * [ ] dependencies and the service. 
+* [ ] Installation description for Debian based Linux Systems
+* [ ] Full Control in Home Assistant with a single Widget (Fan Speed, Temperature)
+* [ ] React on input immediatly - Still Read on Interval Status
+* [ ] Implement set_fan_levels() based on values from MQTT (e.g. input_numbers in HA) to set the fan levels for all modes. Also enables setting intake or exhaust fans only as in original controller.
 
 Any help welcome!
