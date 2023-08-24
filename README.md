@@ -64,6 +64,10 @@ If you want to use a Serial-2-Ethernet-Converter (e. g. from <https://www.wavesh
     /usr/bin/socat -d -d pty,link="$SERIAL_PORT",raw,group-late=dialout,mode=660 tcp:"$COMFOAIR_IP":"$COMFOAIR_PORT" &
 ```
 
+Container was tested with USR-TCP232-302
+
+<https://www.pusr.com/products/1-port-rs232-to-ethernet-converters-usr-tcp232-302.html>
+
 Running the container with local attached serial connection is still untested. Feedback is welcome.
 
 ### Starting Docker Container
