@@ -1,0 +1,27 @@
+version: '2'
+
+services:    
+  hassioaddon-comfoair350:
+    image: k42sde/hassioaddon-comfoair350:latest
+    container_name: hassioaddon-comfoair350
+    environment:
+      - SOCAT=True
+      - COMFOAIR_IP=192.168.1.50
+      - COMFOAIR_PORT=502
+      - SERIAL_PORT="/dev/comfoair350"
+      - RS485_PROTOCOL=False
+      - REFRESH_INTERVAL=10
+      - ENABLE_PC_MODE=False
+      - DEBUG=False
+      - MQTT_SERVER=mosquitto.domain.tld
+      - MQTT_PORT=1883
+      - MQTT_KEEPALIVE=45
+      - MQTT_USER=username
+      - MQTT_PASSWORD=password
+      - HA_ENABLE_AUTO_DISCOVERY_SENSORS=True
+      - HA_ENABLE_AUTO_DISCOVERY_CLIMATE=True
+      - HA_AUTO_DISCOVERY_DEVICE_ID=ca350
+      - HA_AUTO_DISCOVERY_DEVICE_NAME=CA350
+      - HA_AUTO_DISCOVERY_DEVICE_MANUFACTURER=Zehnder
+      - HA_AUTO_DISCOVERY_DEVICE_MODEL=Comfoair 350
+    restart: always

@@ -1,0 +1,42 @@
+[DEFAULT]
+# Serial port CA350 RS232 / RS485 direct or via USB TTL adapter
+SerialPort={{SERIAL_PORT}}
+# Select RS232 or RS485 protocol
+RS485_protocol={{RS485_PROTOCOL}}
+# Interval in seconds at which data from RS232 will be polled
+refresh_interval={{REFRESH_INTERVAL}}
+# automatically enable PC Mode (disable comfosense)
+enablePcMode={{ENABLE_PC_MODE}}
+debug={{DEBUG}}
+
+[MQTT]
+# MQTT broker - IP
+MQTTServer={{MQTT_SERVER}}
+# MQTT broker - Port
+MQTTPort={{MQTT_PORT}}
+ # MQTT broker - keepalive
+MQTTKeepalive={{MQTT_KEEPALIVE}}
+# MQTT broker - user - default: empty (disabled/no authentication)
+MQTTUser={{MQTT_USER}}
+# MQTT broker - password - default: empty (disabled/no authentication)
+MQTTPassword={{MQTT_PASSWORD}}
+
+[HA]
+# Home Assistant sensor auto discovery
+HAEnableAutoDiscoverySensors={{HA_ENABLE_AUTO_DISCOVERY_SENSORS}}
+
+# Home Assistant climate auto discovery
+HAEnableAutoDiscoveryClimate={{HA_ENABLE_AUTO_DISCOVERY_CLIMATE}}
+
+# Home Assistant Device Discovery
+# Unique device ID (change this to be unique if running multiple instances)
+HAAutoDiscoveryDeviceId={{HA_AUTO_DISCOVERY_DEVICE_ID}}
+
+# Device name shown in the frontend
+HAAutoDiscoveryDeviceName={{HA_AUTO_DISCOVERY_DEVICE_NAME}}
+
+# Device manufacturer shown in device info
+HAAutoDiscoveryDeviceManufacturer={{HA_AUTO_DISCOVERY_DEVICE_MANUFACTURER}}
+
+# Device model shown in device info
+HAAutoDiscoveryDeviceModel={{HA_AUTO_DISCOVERY_DEVICE_MODEL}}
