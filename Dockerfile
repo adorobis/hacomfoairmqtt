@@ -31,25 +31,6 @@ RUN mkdir -p /opt/hacomfoairmqtt
 COPY src/ca350.py /opt/hacomfoairmqtt/ca350.py
 COPY src/config.ini.docker /opt/hacomfoairmqtt/config.ini.docker
 
-RUN sed \
-    -e "s|{{SERIAL_PORT}}|${SERIAL_PORT}|"  \
-    -e "s|{{RS485_PROTOCOL}}|${RS485_PROTOCOL}|"  \
-    -e "s|{{REFRESH_INTERVAL}}|${REFRESH_INTERVAL}|"  \
-    -e "s|{{ENABLE_PC_MODE}}|${ENABLE_PC_MODE}|"  \
-    -e "s|{{DEBUG}}|${DEBUG}|"  \
-    -e "s|{{MQTT_SERVER}}|${MQTT_SERVER}|"  \
-    -e "s|{{MQTT_PORT}}|${MQTT_PORT}|"  \
-    -e "s|{{MQTT_KEEPALIVE}}|${MQTT_KEEPALIVE}|"  \
-    -e "s|{{MQTT_USER}}|${MQTT_USER}|"  \
-    -e "s|{{MQTT_PASSWORD}}|${MQTT_PASSWORD}|"  \
-    -e "s|{{HA_ENABLE_AUTO_DISCOVERY_SENSORS}}|${HA_ENABLE_AUTO_DISCOVERY_SENSORS}|"  \
-    -e "s|{{HA_ENABLE_AUTO_DISCOVERY_CLIMATE}}|${HA_ENABLE_AUTO_DISCOVERY_CLIMATE}|"  \
-    -e "s|{{HA_AUTO_DISCOVERY_DEVICE_ID}}|${HA_AUTO_DISCOVERY_DEVICE_ID}|"  \
-    -e "s|{{HA_AUTO_DISCOVERY_DEVICE_NAME}}|${HA_AUTO_DISCOVERY_DEVICE_NAME}|"  \
-    -e "s|{{HA_AUTO_DISCOVERY_DEVICE_MANUFACTURER}}|${HA_AUTO_DISCOVERY_DEVICE_MANUFACTURER}|"  \
-    -e "s|{{HA_AUTO_DISCOVERY_DEVICE_MODEL}}|${HA_AUTO_DISCOVERY_DEVICE_MODEL}|"  \   
-    /opt/hacomfoairmqtt/config.ini.docker >  /opt/hacomfoairmqtt/config.ini
-
 COPY src/start.sh /usr/local/bin/start.sh
 RUN chmod 744 /usr/local/bin/start.sh
 CMD /usr/local/bin/start.sh
