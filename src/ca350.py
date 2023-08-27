@@ -371,7 +371,8 @@ def get_temp():
             ExhaustAirTemp = data[4] / 2.0 - 20
 #            SensorsInstalled = data[5]
 #            info_msg('Sensors installed {0} :'.SensorsInstalled)
-            EWTTemp = data[6] / 2.0 - 20
+            if len(data) > 6:
+                EWTTemp = data[6] / 2.0 - 20
 				
             if 10 < ComfortTemp < 30:
                 publish_message(msg=str(ComfortTemp), mqtt_path='comfoair/comforttemp')
@@ -379,7 +380,8 @@ def get_temp():
                 publish_message(msg=str(SupplyAirTemp), mqtt_path='comfoair/supplytemp')
                 publish_message(msg=str(ExhaustAirTemp), mqtt_path='comfoair/exhausttemp')
                 publish_message(msg=str(ReturnAirTemp), mqtt_path='comfoair/returntemp')
-                publish_message(msg=str(EWTTemp), mqtt_path='comfoair/ewttemp')
+                if EWTTemp is not None:
+                    publish_message(msg=str(EWTTemp), mqtt_path='comfoair/ewttemp')
                 debug_msg('OutsideAirTemp: {0}, SupplyAirTemp: {1}, ReturnAirTemp: {2}, ExhaustAirTemp: {3}, ComfortTemp: {4}, EWTTemp: {5}'.format(OutsideAirTemp, SupplyAirTemp, ReturnAirTemp, ExhaustAirTemp, ComfortTemp, EWTTemp))
             else:
                 warning_msg('get_temp returned bad temp data. Retrying in 2 sec')
