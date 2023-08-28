@@ -359,7 +359,7 @@ def set_comfort_temperature(nr):
 
 def get_temp():
     data = send_command(b'\x00\xD1', None)
-
+    EWTTemp = None
     if data is None:
         warning_msg('get_temp function could not get serial data')
     else:
