@@ -9,6 +9,16 @@ refresh_interval=10
 enablePcMode=False
 debug=False
 
+[DEVICE]
+FanOutAbsent=15
+FanOutLow=25
+FanOutMid=40
+FanOutHigh=70
+FanInAbsent=15
+FanInLow=25
+FanInMid=40
+FanInHigh=70
+
 [MQTT]
 # MQTT broker - IP
 MQTTServer=10.144.1.103
