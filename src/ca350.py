@@ -331,22 +331,6 @@ def set_ventilation_level(nr):
         time.sleep(2)
         set_ventilation_level(nr)
 
-def set_fan_levels():
-    data = send_command(b'\x00\xCF', b'\x00', expect_reply=False)
-
-    if data:
-        info_msg('Changed the fan levels')
-        get_ventilation_levels()
-        get_ventilation_status()
-        get_fan_status()
-    else:
-        warning_msg('Changing the fan levels went wrong, received invalid data after the set command')
-        time.sleep(2)
-        set_fan_levels()
-        get_ventilation_levels()
-        get_ventilation_status()
-        get_fan_status()
-
 def set_pc_mode(nr):
     if 0 <= nr <= 4 and nr != 2:
         data = send_command(b'\x00\x9B', bytes([nr]))
@@ -547,8 +531,7 @@ def set_fan_levels(Intake=True, Exhaust=True):
     else:
         warning_msg('Changing the fan levels went wrong, received invalid data after the set command')
         time.sleep(2)
-        set_fan_levels()
-        get_ventilation_levels()
+        set_fan_levels(Intake, Exhaust)
         get_ventilation_status()
         get_fan_status()
 
