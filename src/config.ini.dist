@@ -18,6 +18,7 @@ FanInAbsent=15
 FanInLow=25
 FanInMid=40
 FanInHigh=70
+SetUpFanLevelsAtStart=True
 
 [MQTT]
 # MQTT broker - IP

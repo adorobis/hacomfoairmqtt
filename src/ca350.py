@@ -38,6 +38,7 @@ refresh_interval = int(config['DEFAULT']['refresh_interval'])  # Interval in sec
 enablePcMode = config['DEFAULT']['enablePcMode'] == 'True'     # automatically enable PC Mode (disable comfosense)
 debug = config['DEFAULT']['debug'] == 'True'
 
+#Fan % configuration for each ventilation level
 FanOutAbsent = int(config['DEVICE']['FanOutAbsent'])
 FanOutLow = int(config['DEVICE']['FanOutLow'])
 FanOutMid = int(config['DEVICE']['FanOutMid'])
@@ -46,6 +47,9 @@ FanInAbsent = int(config['DEVICE']['FanInAbsent'])
 FanInLow = int(config['DEVICE']['FanInLow'])
 FanInMid = int(config['DEVICE']['FanInMid'])
 FanInHigh = int(config['DEVICE']['FanInHigh'])
+
+#Set fan levels at the start of the program. If false will be only controlled when fans are enabled or disabled.
+SetUpFanLevelsAtStart = config['DEVICE']['SetUpFanLevelsAtStart'] == 'True'
 
 MQTTServer = config['MQTT']['MQTTServer']            # MQTT broker - IP
 MQTTPort = int(config['MQTT']['MQTTPort'])           # MQTT broker - Port
@@ -1162,6 +1166,8 @@ else:
             set_pc_mode(3)
         else:
             set_pc_mode(0)  # If PC mode is disabled, deactivate it (in case it was activated in an earlier run)
+    if SetUpFanLevelsAtStart:
+        set_fan_levels(Intake=True, Exhaust=True)
     mqttc.loop_start()
     while True:
         try:
