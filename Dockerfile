@@ -25,7 +25,7 @@ ENV HA_AUTO_DISCOVERY_DEVICE_MODEL="ComfoAir 350"
 
 RUN apt update
 RUN apt upgrade -y
-RUN apt install -y socat python3-paho-mqtt python3-serial python3-yaml
+RUN apt install -y socat python3-paho-mqtt==1.6.1 python3-serial python3-yaml
 
 RUN mkdir -p /opt/hacomfoairmqtt
 COPY src/ca350.py /opt/hacomfoairmqtt/ca350.py
