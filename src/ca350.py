@@ -570,11 +570,11 @@ def get_ventilation_status():
 
             debug_msg('ReturnAirLevel: {}, SupplyAirLevel: {}, FanLevel: {}, IntakeFanActive: {}'.format(ReturnAirLevel, SupplyAirLevel, FanLevel, StrIntakeFanActive))
 
-            if OutLow == 0 and InLow == 0:
+            if OutLow == FanOutAbsent and InLow == FanInAbsent:
                 publish_message(msg='off', mqtt_path='comfoair/fancontrol')
-            elif OutLow > 0 and InLow == 0:
+            elif OutLow > FanOutAbsent and InLow == FanInAbsent:
                 publish_message(msg='Out', mqtt_path='comfoair/fancontrol')
-            elif OutLow == 0 and InLow > 0:
+            elif OutLow == FanOutAbsent and InLow > FanInAbsent:
                 publish_message(msg='In', mqtt_path='comfoair/fancontrol')
             else:
                 publish_message(msg='Both', mqtt_path='comfoair/fancontrol')
