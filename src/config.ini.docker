@@ -9,6 +9,17 @@ refresh_interval={{REFRESH_INTERVAL}}
 enablePcMode={{ENABLE_PC_MODE}}
 debug={{DEBUG}}
 
+[DEVICE]
+FanOutAbsent={{FAN_OUT_ABSENT}}
+FanOutLow={{FAN_OUT_LOW}}
+FanOutMid={{FAN_OUT_MID}}
+FanOutHigh={{FAN_OUT_HIGH}}
+FanInAbsent={{FAN_IN_ABSENT}}
+FanInLow={{FAN_IN_LOW}}
+FanInMid={{FAN_IN_MID}}
+FanInHigh={{FAN_IN_HIGH}}
+SetUpFanLevelsAtStart={{SETUP_FAN_LEVELS_AT_START}}
+
 [MQTT]
 # MQTT broker - IP
 MQTTServer={{MQTT_SERVER}}
