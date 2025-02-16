@@ -1,10 +1,5 @@
-FROM python:slim
-
-ARG VERSION
-
-ARG TARGETARCH
-
-LABEL maintainer="adorobis@gmail.com"
+FROM ubuntu:22.04
+LABEL maintainer="jens@schanz.cloud"
 LABEL version="0.1"
 LABEL description="Docker image for hacomfoairmqtt and serial over IP"
 
@@ -39,7 +34,7 @@ ENV HA_AUTO_DISCOVERY_DEVICE_MODEL="ComfoAir 350"
 
 RUN apt update
 RUN apt upgrade -y
-RUN apt install -y socat python3-paho-mqtt=1.6.1-1 python3-serial
+RUN apt install -y socat python3-paho-mqtt==1.6.1 python3-serial python3-yaml
 
 RUN mkdir -p /opt/hacomfoairmqtt
 COPY src/ca350.py /opt/hacomfoairmqtt/ca350.py
