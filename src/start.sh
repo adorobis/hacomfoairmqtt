@@ -7,6 +7,15 @@ sed \
     -e "s|refresh_interval=.*|refresh_interval=${REFRESH_INTERVAL}|"  \
     -e "s|enablePcMode=.*|enablePcMode=${ENABLE_PC_MODE}|"  \
     -e "s|debug=.*|debug=${DEBUG}|"  \
+    -e "s|FanOutAbsent=.*|FanOutAbsent=${FAN_OUT_ABSENT}|"  \
+    -e "s|FanOutLow=.*|FanOutLow=${FAN_OUT_LOW}|"  \
+    -e "s|FanOutMid=.*|FanOutMid=${FAN_OUT_MID}|"  \
+    -e "s|FanOutHigh=.*|FanOutHigh=${FAN_OUT_HIGH}|"  \
+    -e "s|FanInAbsent=.*|FanInAbsent=${FAN_IN_ABSENT}|"  \
+    -e "s|FanInLow=.*|FanInLow=${FAN_IN_LOW}|"  \
+    -e "s|FanInMid=.*|FanInMid=${FAN_IN_MID}|"  \
+    -e "s|FanInHigh=.*|FanInHigh=${FAN_IN_HIGH}|"  \
+    -e "s|SetUpFanLevelsAtStart=.*|SetUpFanLevelsAtStart=${SETUP_FAN_LEVELS_AT_START}|"  \
     -e "s|MQTTServer=.*|MQTTServer=${MQTT_SERVER}|"  \
     -e "s|MQTTPort=.*|MQTTPort=${MQTT_PORT}|"  \
     -e "s|MQTTKeepalive=.*|MQTTKeepalive=${MQTT_KEEPALIVE}|"  \
