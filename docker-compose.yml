@@ -1,9 +1,9 @@
 version: '2'
 
 services:    
-  hassioaddon-comfoair350:
-    image: k42sde/hassioaddon-comfoair350:latest
-    container_name: hassioaddon-comfoair350
+  comfoair:
+    image: adorobis/hacomfoairmqtt:latest
+    container_name: comfoair
     environment:
       - SOCAT=True
       - COMFOAIR_IP=192.168.1.50
@@ -13,6 +13,15 @@ services:
       - REFRESH_INTERVAL=10
       - ENABLE_PC_MODE=False
       - DEBUG=False
+      - FAN_OUT_ABSENT=15
+      - FAN_OUT_LOW=30
+      - FAN_OUT_MID=50
+      - FAN_OUT_HIGH=70
+      - FAN_IN_ABSENT=15
+      - FAN_IN_LOW=30
+      - FAN_IN_MID=50
+      - FAN_IN_HIGH=70
+      - SETUP_FAN_LEVELS_AT_START=True
       - MQTT_SERVER=mosquitto.domain.tld
       - MQTT_PORT=1883
       - MQTT_KEEPALIVE=45
