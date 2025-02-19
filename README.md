@@ -3,6 +3,8 @@
 Home Assistant integration for Zehnder ComfoAir serial controlled ventilation systems via RS232 serial connection and MQTT.
 While the scripts has been developed using the protocol description for Zehnder ComfoAir devices, it should also be compatible with largely similar systems from other manufacturers, such as StorkAir WHR930, Wernig G90-380, and Paul Santos 370 DC. It has also undergone successful testing on a ComfoAir 350.
 
+Comfoair devices can be connected via RS232 port of the computer running this script, a USB-RS232 converter/cable or via Network to RS232 gateway. Details of such devices that it has been tested with are available in [the Wiki]([url](https://github.com/adorobis/hacomfoairmqtt/wiki/Docker-container#tested-rs232---network-devices)).
+
 It is not compatible with the newer ComfoAir Q series or Aeris Next models as they use a different communication standard.
 
 This work is based on scripts created for Domoticz integration <https://github.com/AlbertHakvoort/StorkAir-Zehnder-WHR-930-Domoticz-MQTT>
@@ -38,6 +40,15 @@ refresh_interval | Refresh Interval in Seconds. Default: 10
 enablePcMode     | Automaticly enable PC Mode (disable comfosense). Default: False (disabled)
 RS485_protocol   | Enable RS485 protocol, if false RSS232 is used Default: False (RS232)
 debug            | Enable Debug Output. Default: False (disabled)
+FanOutAbsent     | Exhaust Fan level % for lowest speed (Absent, Off - description depending on model)
+FanOutLow        | Exhaust Fan level % for Low speed (level 1 - description depending on model)
+FanOutMid        | Exhaust Fan level % for Medium speed (level 2 - description depending on model)
+FanOutHigh       | Exhaust Fan level % for High speed (level 3 - description depending on model)
+FanInAbsent      | Supply Fan level % for lowest speed (Absent, Off - description depending on model)
+FanInLow         | Supply Fan level % for Low speed (level 1 - description depending on model)
+FanInMid         | Supply Fan level % for Medium speed (level 2 - description depending on model)
+FanInHigh        | Supply Fan level % for High speed (level 3 - description depending on model)
+SetUpFanLevelsAtStart | True/False - wheather fan level config should be executed at the start of the script
 
 ## MQTT Auto Discovery Configutation:
 
@@ -109,10 +120,9 @@ The following Lovelace widgets depend on the MQTT AD enities and can be used wit
 * [x] Installation description for Debian based Linux Systems
 * [ ] Full Control in Home Assistant with a single Widget (Fan Speed, Temperature)
 * [ ] React on input immediatly - Still Read on Interval Status
-* [ ] Implement set_fan_levels() based on values from MQTT (e.g. input_numbers in HA) to set the fan levels for all modes. Also enables setting intake or exhaust fans only as in original controller.
 
-Troubleshooting
+## Troubleshooting
 If you encounter any issues during the setup process, please refer to the official documentation for Docker, Docker Compose, MQTT and Homeassistant.
 
-Contributions
+## Contributions
 Contributions to improve and expand this repository are welcome. Feel free to fork the repository, make your changes, and submit a pull request.
