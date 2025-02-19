@@ -3,7 +3,7 @@
 Home Assistant integration for Zehnder ComfoAir serial controlled ventilation systems via RS232 serial connection and MQTT.
 While the scripts has been developed using the protocol description for Zehnder ComfoAir devices, it should also be compatible with largely similar systems from other manufacturers, such as StorkAir WHR930, Wernig G90-380, and Paul Santos 370 DC. It has also undergone successful testing on a ComfoAir 350.
 
-Comfoair devices can be connected via RS232 port of the computer running this script, a USB-RS232 converter/cable or via Network to RS232 gateway. Details of such devices that it has been tested with are available in [the Wiki]([url](https://github.com/adorobis/hacomfoairmqtt/wiki/Docker-container#tested-rs232---network-devices)).
+Comfoair devices can be connected via RS232 port of the computer running this script, a USB-RS232 converter/cable or via Network to RS232 gateway. Details of such devices that it has been tested with are available in [the Wiki](https://github.com/adorobis/hacomfoairmqtt/wiki/Docker-container#tested-rs232---network-devices).
 
 It is not compatible with the newer ComfoAir Q series or Aeris Next models as they use a different communication standard.
 
