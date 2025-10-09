@@ -1124,7 +1124,7 @@ def on_connect(client, userdata, flags, reason_code, properties):
         delete_message("homeassistant/climate/ca350_climate/config")
     topic_subscribe()
 
-def on_disconnect(client, userdata, reason_code, properties):
+def on_disconnect(client, userdata, flags, reason_code, properties):
     if reason_code != 0:
         warning_msg('Unexpected disconnection from MQTT, trying to reconnect')
         recon()
