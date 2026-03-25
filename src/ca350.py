@@ -723,7 +723,8 @@ def get_filter_hours():
             warning_msg('function get_filter_hours data array too short')
             
 def reset_filter_timer():
-    data = send_command(b'\x00\x37', b'\x00\x82\x00\x00\x00\x00\x00', expect_reply=False)
+    data = send_command(b'\x00\x37', b'\x00\x80\x00\x00\x00\x00\x02', expect_reply=False)
+    data = send_command(b'\x00\x37', b'\x00\xC0\x00\x00\x00\x00\x03', expect_reply=False)
 
     if data is None:
         warning_msg('reset_filter_timer function could not get serial data')
