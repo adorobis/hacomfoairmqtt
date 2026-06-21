@@ -107,6 +107,21 @@ def calculate_checksum(serial_data_slice):
 
     return checksum.to_bytes(((checksum.bit_length() + 8) // 8), byteorder='big')[-1:]
 
+# Unstuff duplicate 0x07 bytes before downstream parsing.
+def unstuff_bytes(raw_payload_data):
+    unstuffed = bytearray()
+    i = 0
+
+    while i < len(raw_payload_data):
+        unstuffed.append(raw_payload_data[i])
+
+        if raw_payload_data[i] == 0x07 and i + 1 < len(raw_payload_data) and raw_payload_data[i + 1] == 0x07:
+            i += 1
+
+        i += 1
+
+    return bytes(unstuffed)
+
 # Calculate the length for a given byte string received from the serial connection.
 # If the value 0x07 appears twice in the data area, only one 0x07 is used for the checksum calculation.
 def calculate_length(serial_data_slice):
@@ -153,7 +168,7 @@ def filter_and_validate(data, result_command):
                     warning_msg('Incorrect checksum')
                     return None
 
-                return line[5:-3]  # Only return data, no start, end, length and checksum
+                return unstuff_bytes(line[5:-3])  # Only return data, no start, end, length and checksum
 
     warning_msg('Expected return not found')
     return None
