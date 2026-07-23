@@ -19,6 +19,11 @@ FanInLow=25
 FanInMid=40
 FanInHigh=70
 SetUpFanLevelsAtStart=True
+# If the fan levels stored on the device differ from the values above, only overwrite them
+# when this is True. Defaults to False so a restart never silently overwrites a professionally
+# commissioned calibration - it will log a WARNING instead. Set to True once you've confirmed
+# the values above are what you actually want written to the device.
+ConfirmFanLevelOverwrite=False
 
 [MQTT]
 # MQTT broker - IP
