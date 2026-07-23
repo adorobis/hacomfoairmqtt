@@ -51,6 +51,10 @@ FanInHigh = int(config['DEVICE']['FanInHigh'])
 #Set fan levels at the start of the program. If false will be only controlled when fans are enabled or disabled.
 SetUpFanLevelsAtStart = config['DEVICE']['SetUpFanLevelsAtStart'] == 'True'
 
+#Only push config.ini's fan levels to the device at startup if they differ from what's already
+#stored there. Defaults to False so a restart never silently overwrites a commissioned calibration.
+ConfirmFanLevelOverwrite = config['DEVICE'].get('ConfirmFanLevelOverwrite', 'False') == 'True'
+
 MQTTServer = config['MQTT']['MQTTServer']            # MQTT broker - IP
 MQTTPort = int(config['MQTT']['MQTTPort'])           # MQTT broker - Port
 MQTTKeepalive = int(config['MQTT']['MQTTKeepalive']) # MQTT broker - keepalive
@@ -554,6 +558,47 @@ def set_fan_levels(Intake=True, Exhaust=True):
         set_fan_levels(Intake, Exhaust)
         get_ventilation_status()
         get_fan_status()
+
+def get_fan_levels_from_device():
+    # Same 0xCD query used by get_ventilation_status(), just returning the raw per-level
+    # bytes instead of publishing them, so we can diff them against config.ini before writing.
+    data = send_command(b'\x00\xCD', None)
+
+    if data is None or len(data) <= 12:
+        warning_msg('get_fan_levels_from_device function could not get serial data')
+        return None
+
+    return {
+        'OutAbsent': data[0], 'OutLow': data[1], 'OutMid': data[2], 'OutHigh': data[10],
+        'InAbsent': data[3], 'InLow': data[4], 'InMid': data[5], 'InHigh': data[11],
+    }
+
+def reconcile_fan_levels():
+    device_levels = get_fan_levels_from_device()
+
+    if device_levels is None:
+        warning_msg('Could not read current fan levels from device, falling back to unconditional set_fan_levels()')
+        set_fan_levels(Intake=True, Exhaust=True)
+        return
+
+    config_levels = {
+        'OutAbsent': FanOutAbsent, 'OutLow': FanOutLow, 'OutMid': FanOutMid, 'OutHigh': FanOutHigh,
+        'InAbsent': FanInAbsent, 'InLow': FanInLow, 'InMid': FanInMid, 'InHigh': FanInHigh,
+    }
+
+    mismatches = {k: (device_levels[k], v) for k, v in config_levels.items() if device_levels[k] != v}
+
+    if not mismatches:
+        info_msg('Fan levels on device already match config.ini, skipping write')
+        return
+
+    diff_str = ', '.join('{0}: device={1} config={2}'.format(k, dev, cfg) for k, (dev, cfg) in mismatches.items())
+
+    if ConfirmFanLevelOverwrite:
+        warning_msg('Fan levels differ from config.ini ({0}). Overwriting because ConfirmFanLevelOverwrite=True.'.format(diff_str))
+        set_fan_levels(Intake=True, Exhaust=True)
+    else:
+        warning_msg('Fan levels differ from config.ini ({0}). NOT overwriting - set ConfirmFanLevelOverwrite=True in config.ini once you have confirmed these are the values you want on the device.'.format(diff_str))
 
 def get_ventilation_status():
     data = send_command(b'\x00\xCD', None)
@@ -1184,7 +1229,7 @@ else:
         else:
             set_pc_mode(0)  # If PC mode is disabled, deactivate it (in case it was activated in an earlier run)
     if SetUpFanLevelsAtStart:
-        set_fan_levels(Intake=True, Exhaust=True)
+        reconcile_fan_levels()
     mqttc.loop_start()
     while True:
         try:
